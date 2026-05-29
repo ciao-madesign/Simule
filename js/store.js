@@ -13,7 +13,7 @@ const defaultPrefs = {
   lookahead_dist_m: 500,
   manual_pace_s: 360,
   maptiler_key: '',
-  mapillary_token: ''
+  mapillary_token: 'MLY|28141066488815866|c57b4a9e334632eca4efd0748905287e'
 };
 
 function loadPrefs() {

@@ -28,7 +28,7 @@ async function fetchMapillary(lat, lon, heading) {
       const score = heading !== undefined ? angleDiff(img.computed_compass_angle || 0, heading) : 0;
       if (score < bestScore) { bestScore = score; best = img; }
     }
-    return best ? { url: best.thumb_1024_url, heading: best.computed_compass_angle || 0, source: 'mapillary' } : null;
+    return best ? { url: best.thumb_1024_url, id: best.id, heading: best.computed_compass_angle || 0, source: 'mapillary' } : null;
   } catch { return null; }
 }
 
@@ -94,17 +94,24 @@ class StreetView {
     this._imgEl = null;
     this._badgeEl = null;
     this._wrapEl = null;
+    this._mlyEl = null;
+    this._mlyViewer = null;
+    this._mlyCurrentId = null;
     this._cache = new Map();
     this._noImageStreak = 0;
   }
 
-  init(imgElement, badgeElement, wrapElement = null) {
+  init(imgElement, badgeElement, wrapElement = null, mlyElement = null) {
     this._imgEl = imgElement;
     this._badgeEl = badgeElement;
     this._wrapEl = wrapElement;
-    // Mostra subito satellite; il badge sparirà alla prima immagine trovata
+    this._mlyEl = mlyElement;
     if (this._wrapEl) this._wrapEl.style.background = 'transparent';
     this._showBadge('🗺 Satellite');
+  }
+
+  setMapillaryViewer(viewer) {
+    this._mlyViewer = viewer;
   }
 
   async update({ current_point, heading }) {
@@ -122,9 +129,22 @@ class StreetView {
     if (img) {
       this._noImageStreak = 0;
       if (this._wrapEl) this._wrapEl.style.background = '#000';
-      this._imgEl.src = img.url;
-      this._imgEl.style.display = 'block';
       this._hideBadge();
+
+      if (img.source === 'mapillary' && img.id && this._mlyViewer) {
+        // Viewer 360° interattivo Mapillary
+        if (this._mlyEl) this._mlyEl.style.visibility = 'visible';
+        this._imgEl.style.display = 'none';
+        if (img.id !== this._mlyCurrentId) {
+          this._mlyCurrentId = img.id;
+          this._mlyViewer.moveTo(img.id).catch(() => {});
+        }
+      } else {
+        // Immagine statica (Panoramax o Mapillary senza viewer)
+        if (this._mlyEl) this._mlyEl.style.visibility = 'hidden';
+        this._imgEl.src = img.url;
+        this._imgEl.style.display = 'block';
+      }
 
       // Prefetch punto successivo
       const nextLat = lat + 0.00015 * Math.cos(heading * Math.PI / 180);
@@ -141,6 +161,7 @@ class StreetView {
       this._noImageStreak++;
       if (this._noImageStreak >= 2) {
         if (this._wrapEl) this._wrapEl.style.background = 'transparent';
+        if (this._mlyEl) this._mlyEl.style.visibility = 'hidden';
         this._imgEl.style.display = 'none';
         const hint = store.prefs.mapillary_token ? '🗺 Satellite' : '🗺 Satellite · aggiungi token Mapillary in Impostazioni';
         this._showBadge(hint);

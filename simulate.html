@@ -17,7 +17,8 @@
       display: none; align-items: center; justify-content: center;
       overflow: hidden; transition: background 0.4s;
     }
-    #street-view-img { width: 100%; height: 100%; object-fit: cover; }
+    #mly-viewer { position: absolute; inset: 0; visibility: hidden; }
+    #street-view-img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1; }
     #no-image-badge {
       position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
       background: rgba(10,12,15,0.75); border: 1px solid var(--border);
@@ -109,6 +110,7 @@
 
     <!-- Street view overlay (road mode senza video) -->
     <div id="street-view-wrap">
+      <div id="mly-viewer"></div>
       <img id="street-view-img" src="" alt="Street view" style="display:none">
       <div id="no-image-badge">🗺 Mappa attiva</div>
     </div>
@@ -319,7 +321,7 @@ async function initView() {
     initPipMap();
     initVideoPlayer();
   } else if (isRoadMode) {
-    // Road senza video: streetview overlay trasparente sopra MapLibre city
+    // Road senza video: streetview 360° overlay sopra MapLibre satellite
     const svWrap = document.getElementById('street-view-wrap');
     svWrap.style.display = 'flex';
     svWrap.style.background = 'transparent';
@@ -327,8 +329,25 @@ async function initView() {
     streetView.init(
       document.getElementById('street-view-img'),
       document.getElementById('no-image-badge'),
-      svWrap
+      svWrap,
+      document.getElementById('mly-viewer')
     );
+    // Carica mapillary-js e inizializza viewer 360° interattivo
+    await loadMapillaryJS();
+    const mlyToken = store.prefs.mapillary_token;
+    if (window.mapillary?.Viewer && mlyToken) {
+      try {
+        const viewer = new mapillary.Viewer({
+          accessToken: mlyToken,
+          container: document.getElementById('mly-viewer'),
+          component: { cover: false, sequence: false }
+        });
+        streetView.setMapillaryViewer(viewer);
+        debug.log('Mapillary viewer 360° pronto');
+      } catch (e) {
+        debug.warn('Mapillary Viewer init fallback a img statica:', e);
+      }
+    }
   }
   // Trail senza video: solo MapLibre 3D satellite (nessun overlay)
 }
@@ -797,6 +816,21 @@ function initControls() {
     }
     if (e.code === 'ArrowRight') simulator.seekBy(100);
     if (e.code === 'ArrowLeft')  simulator.seekBy(-100);
+  });
+}
+
+// ---- Mapillary JS lazy load ----
+async function loadMapillaryJS() {
+  return new Promise(resolve => {
+    if (window.mapillary?.Viewer) { resolve(); return; }
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/mapillary-js@4/dist/mapillary.min.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/mapillary-js@4/dist/mapillary.min.js';
+    script.onload = resolve; script.onerror = resolve;
+    document.head.appendChild(script);
   });
 }
 
