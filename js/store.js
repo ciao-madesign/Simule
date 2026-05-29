@@ -14,6 +14,7 @@ const defaultPrefs = {
   manual_pace_s: 360,
   zoom_offset: 0,
   video_layout: 'pip',
+  avatar: 'default',
   mapillary_token: 'MLY|28141066488815866|c57b4a9e334632eca4efd0748905287e'
 };
 

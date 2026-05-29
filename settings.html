@@ -71,6 +71,50 @@
     </div>
   </section>
 
+  <!-- Avatar cursore -->
+  <section class="settings-section">
+    <h2>Cursore / Avatar</h2>
+    <div class="form-group">
+      <label>Aspetto del cursore sulla mappa</label>
+      <div class="avatar-grid" id="avatar-grid">
+
+        <label class="avatar-option" data-val="default">
+          <input type="radio" name="avatar" value="default">
+          <div class="avatar-preview">
+            <svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <polygon points="15,1 22,14 15,11 8,14" fill="#00e5a0" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+              <circle cx="15" cy="27" r="8" fill="#00e5a0" stroke="white" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <span class="avatar-label">Freccia (default)</span>
+        </label>
+
+        <label class="avatar-option" data-val="runner1">
+          <input type="radio" name="avatar" value="runner1">
+          <div class="avatar-preview avatar-preview-3d">🏃</div>
+          <span class="avatar-label">Runner</span>
+          <a class="avatar-link" href="https://sketchfab.com/3d-models/runner-4e15585a113c4548bea1696be502891b" target="_blank" rel="noopener" onclick="event.stopPropagation()">Sketchfab ↗</a>
+        </label>
+
+        <label class="avatar-option" data-val="runner2">
+          <input type="radio" name="avatar" value="runner2">
+          <div class="avatar-preview avatar-preview-3d">🏃</div>
+          <span class="avatar-label">Runner (grigio)</span>
+          <a class="avatar-link" href="https://sketchfab.com/3d-models/runner-in-gray-e5ef28baa0554c54bc3c75ff33be69fb" target="_blank" rel="noopener" onclick="event.stopPropagation()">Sketchfab ↗</a>
+        </label>
+
+        <label class="avatar-option" data-val="boar">
+          <input type="radio" name="avatar" value="boar">
+          <div class="avatar-preview avatar-preview-3d">🐗</div>
+          <span class="avatar-label">Cinghiale</span>
+          <a class="avatar-link" href="https://sketchfab.com/3d-models/realistic-boar-javali-3d-model-0d6510a6e21b430fa31a345b3fa90a6f" target="_blank" rel="noopener" onclick="event.stopPropagation()">Sketchfab ↗</a>
+        </label>
+
+      </div>
+      <span class="form-hint">I modelli 3D sono caricati da URL pubblici. Per modelli personalizzati scarica il .glb da Sketchfab e sostituisci l'URL in <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:12px">js/maplibre-view.js</code>.</span>
+    </div>
+  </section>
+
   <!-- Preferenze -->
   <section class="settings-section">
     <h2>Preferenze</h2>
@@ -127,6 +171,13 @@ function loadPrefs() {
   document.querySelectorAll('#lookahead-group .radio-option').forEach(opt => {
     if (parseInt(opt.dataset.val) === lookahead) opt.classList.add('selected');
     opt.querySelector('input').checked = parseInt(opt.dataset.val) === lookahead;
+  });
+
+  const currentAvatar = p.avatar || 'default';
+  document.querySelectorAll('#avatar-grid .avatar-option').forEach(opt => {
+    const isSelected = opt.dataset.val === currentAvatar;
+    opt.classList.toggle('selected', isSelected);
+    opt.querySelector('input').checked = isSelected;
   });
 
   const isDebug = new URLSearchParams(location.search).has('debug');
@@ -187,6 +238,15 @@ document.querySelectorAll('#lookahead-group .radio-option').forEach(opt => {
   });
 });
 
+// ---- Avatar ----
+document.querySelectorAll('#avatar-grid .avatar-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#avatar-grid .avatar-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input').checked = true;
+  });
+});
+
 // ---- Salva ----
 document.getElementById('btn-save').addEventListener('click', () => {
   const h = parseFloat(heightInput.value);
@@ -204,6 +264,8 @@ document.getElementById('btn-save').addEventListener('click', () => {
   const lookaheadSelected = document.querySelector('#lookahead-group .radio-option.selected');
   if (lookaheadSelected) store.setPref('lookahead_dist_m', parseInt(lookaheadSelected.dataset.val));
 
+  const avatarSelected = document.querySelector('#avatar-grid .avatar-option.selected');
+  if (avatarSelected) store.setPref('avatar', avatarSelected.dataset.val);
 
   // Debug mode: redirect con/senza ?debug=1
   const debugActive = debugToggle.checked;
