@@ -42,17 +42,27 @@
     }
 
     /* Video embed view */
-    #video-view { position: absolute; inset: 0; background: #000; display: none; }
+    #video-view { position: absolute; inset: 0; background: #000; display: none; z-index: 2; }
     #yt-player-wrap { width: 100%; height: 100%; }
     #mp4-player { width: 100%; height: 100%; object-fit: cover; display: none; }
 
-    /* PiP mini-map (in video mode) */
+    /* PiP mini-map — sempre in basso a destra in video mode */
     #pip-map-wrap {
-      position: absolute; bottom: 80px; left: 12px;
+      position: absolute; bottom: 20px; right: 20px;
       width: 220px; height: 140px; border-radius: 10px;
       overflow: hidden; display: none; z-index: 5;
       border: 2px solid rgba(255,255,255,0.18);
       box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    /* Layout video: affiancato (split) */
+    .video-split #video-view    { width: 50%; right: auto; }
+    .video-split #view-container { left: 50%; }
+
+    /* Split verticale su mobile/portrait */
+    @media (orientation: portrait), (max-width: 640px) {
+      .video-split #video-view     { width: 100%; height: 50%; bottom: auto; right: 0; }
+      .video-split #view-container { top: 50%; left: 0; }
     }
 
     /* Video rate badge */
@@ -235,6 +245,7 @@
       <button class="ctrl-btn" id="btn-forward" title="+500m" aria-label="Avanti 500m">⏭</button>
 
       <button class="multiplier-btn" id="btn-waypoint-toggle" title="Foto waypoint on/off">📸</button>
+      <button class="multiplier-btn" id="btn-video-layout" title="Cambia layout video" style="display:none;margin-left:6px;font-size:14px">⊞</button>
     </div>
   </div>
 </div>
@@ -290,6 +301,7 @@ let lastElevStrip = 0;
 let lfMap = null;
 let lfMarker = null;
 let currentSimDist = 0;
+let videoLayout = 'pip'; // 'pip' | 'split'
 let waypointPhotosEnabled = true;
 let lastWaypointKm = -1;
 let waypointHideTimer = null;
@@ -347,14 +359,36 @@ async function initView() {
   }
 
   if (videoMeta) {
-    // Modalità video: video in primo piano, PiP map in basso a sinistra
     document.getElementById('video-view').style.display = 'block';
-    document.getElementById('pip-map-wrap').style.display = 'block';
     document.getElementById('video-sync-badge').style.display = 'block';
+    document.getElementById('btn-video-layout').style.display = 'flex';
     initPipMap();
     initVideoPlayer();
+    setVideoLayout(store.prefs.video_layout || 'pip');
   }
   // Road e trail senza video: solo mappa satellite MapLibre
+}
+
+// ---- Layout video ----
+function setVideoLayout(mode) {
+  videoLayout = mode;
+  store.setPref('video_layout', mode);
+
+  const root = document.querySelector('.simulate-layout');
+  root.classList.remove('video-split', 'video-pip');
+  root.classList.add(`video-${mode}`);
+
+  const pipEl = document.getElementById('pip-map-wrap');
+  pipEl.style.display = mode === 'pip' ? 'block' : 'none';
+
+  const btn = document.getElementById('btn-video-layout');
+  if (btn) btn.textContent = mode === 'split' ? '⊡' : '⊞';
+
+  // MapLibre deve ricalcolare dimensioni dopo cambio layout
+  setTimeout(() => {
+    maplibreView?.resize();
+    if (mode === 'pip') pipMap?.invalidateSize();
+  }, 120);
 }
 
 function initLeafletBg() {
@@ -813,6 +847,10 @@ function initControls() {
     }
     if (e.code === 'ArrowRight') simulator.seekBy(100);
     if (e.code === 'ArrowLeft')  simulator.seekBy(-100);
+  });
+
+  document.getElementById('btn-video-layout').addEventListener('click', () => {
+    setVideoLayout(videoLayout === 'pip' ? 'split' : 'pip');
   });
 
   document.getElementById('btn-zoom-in').addEventListener('click', () => {
