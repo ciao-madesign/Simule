@@ -19,7 +19,6 @@ export class Pedometer {
     this._sampleTimer = null;
     this._onUpdate = null;
     this._active = false;
-    this._lastAccZ = 0;
     this._prevSmoothed = 0;
     this._rising = false;
   }

@@ -17,7 +17,6 @@ function getBearing(a, b) {
 class Simulator {
   constructor() {
     this._route = null;
-    this._options = {};
     this._currentDist = 0;
     this._startTime = null;
     this._elapsedTime = 0;
@@ -33,7 +32,6 @@ class Simulator {
 
   init(route, options = {}) {
     this._route = route;
-    this._options = options;
     this._currentDist = options.startDist || 0;
     this._elapsedTime = 0;
     this._startTime = null;

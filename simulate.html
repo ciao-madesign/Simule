@@ -493,13 +493,6 @@ function resyncVideoToRoute(forceSeek = false) {
     try { ytPlayer.seekTo(expectedTime, true); } catch {}
     debug.log(`Video risincronizzato: drift=${drift.toFixed(1)}s → seekTo ${expectedTime.toFixed(1)}s`);
   }
-
-  const badge = document.getElementById('video-sync-badge');
-  if (badge && ytPlayer.getPlayerState?.() === 1) {
-    const rate = snapYTRate(Math.max(0.25, Math.min(2,
-      videoMeta.avgSpeedMs > 0 ? (currentSimDist > 0 ? 1 : 1) : 1)));
-    badge.textContent = `▶ ×${rate.toFixed(2)}`;
-  }
 }
 
 // Controllo periodico ogni 10 s: rete di sicurezza contro drift accumulato

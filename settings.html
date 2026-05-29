@@ -283,7 +283,6 @@ document.getElementById('btn-save').addEventListener('click', () => {
 document.getElementById('btn-clear-routes').addEventListener('click', () => {
   if (confirm('Rimuovere tutti i percorsi recenti?')) {
     store.set('recentRoutes', []);
-    store._saveRecentRoutes();
     showToast('Percorsi recenti rimossi');
   }
 });

@@ -1,5 +1,4 @@
 // Calcolo pendenza istantanea con finestra mobile e lookahead
-import debug from './debug.js';
 
 function interpolateAtDist(points, dist) {
   if (dist <= 0) return points[0];

@@ -215,7 +215,7 @@ function switchMode(mode) {
   const routeId = sessionStorage.getItem('simule_active_route_id');
   if (routeId) {
     const r = store.recentRoutes.find(r => r.id === routeId);
-    if (r) { r.mode = mode; store._saveRecentRoutes(); }
+    if (r) { r.mode = mode; store.set('recentRoutes', store.recentRoutes); }
   }
   updateModeToggle(mode);
   if (mode === 'road') {

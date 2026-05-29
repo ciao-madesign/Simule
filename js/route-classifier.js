@@ -47,7 +47,7 @@ export async function classifyRoute(points) {
 
   // Campiona 1 punto ogni SAMPLE_INTERVAL_M
   for (let d = 0; d <= totalDist; d += SAMPLE_INTERVAL_M) {
-    const idx = points.findIndex(p => p.dist_from_start >= d) ?? points.length - 1;
+    const idx = points.findIndex(p => p.dist_from_start >= d);
     if (idx >= 0) samples.push(points[idx]);
   }
   if (samples.length === 0) samples.push(points[Math.floor(points.length / 2)]);
