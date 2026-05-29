@@ -98,11 +98,8 @@ input:focus, select:focus {
   font-weight: 900;
   font-size: 22px;
   letter-spacing: 0.08em;
-  color: var(--fg);
+  color: var(--text);
   text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .logo span { color: var(--accent); }
@@ -642,7 +639,7 @@ input:focus, select:focus {
   font-weight: 900;
   font-size: 18px;
   letter-spacing: 0.1em;
-  color: var(--accent);
+  color: var(--text);
   text-transform: uppercase;
 }
 
