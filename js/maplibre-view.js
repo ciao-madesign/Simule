@@ -38,12 +38,7 @@ class MaplibreView {
 
   async init(container, points, mode = 'offroad') {
     this._mode = mode;
-    const key = store.prefs.maptiler_key;
-
-    // Satellite per entrambe le modalità — nessun terrain per evitare glitch
-    const style = key
-      ? `https://api.maptiler.com/maps/satellite/style.json?key=${key}`
-      : buildSatStyle();
+    const style = buildSatStyle();
 
     // Road: più vicino e meno inclinato (runner su strada)
     // Trail: un po' più lontano e inclinato per vedere il terreno circostante
@@ -100,7 +95,7 @@ class MaplibreView {
             this.update(this._pendingUpdate);
             this._pendingUpdate = null;
           }
-          debug.log(`MapLibre satellite pronto — ${mode} / ${key ? 'MapTiler' : 'Esri'}`);
+          debug.log(`MapLibre satellite pronto — ${mode} / Esri`);
           resolve();
         });
 

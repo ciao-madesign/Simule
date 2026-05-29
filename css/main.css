@@ -764,7 +764,7 @@ input:focus, select:focus {
   position: absolute;
   bottom: 70px;
   left: 0;
-  right: 0;
+  max-width: 50vw;
   padding: 0 16px;
 }
 

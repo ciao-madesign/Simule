@@ -71,43 +71,7 @@
     </div>
   </section>
 
-  <!-- API Keys -->
-  <section class="settings-section">
-    <h2>Chiavi API</h2>
-
-    <div class="form-group">
-      <label for="mapillary-token">
-        Mapillary Access Token
-        <span id="mly-status-badge" style="display:none;background:rgba(0,229,160,0.15);color:var(--accent);border:1px solid rgba(0,229,160,0.3);border-radius:100px;padding:2px 8px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.05em;margin-left:8px">✓ ATTIVO</span>
-      </label>
-      <div class="api-key-row">
-        <div class="form-group" style="margin:0;flex:1">
-          <input type="text" id="mapillary-token" placeholder="Token già configurato — sostituisci solo con il tuo" autocomplete="new-password" spellcheck="false">
-        </div>
-        <a href="https://www.mapillary.com/developer" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni il tuo →</a>
-      </div>
-      <div class="form-hint">
-        Usato per le immagini stradali 360° in modalità Road. <strong>Un token è già preconfigurato</strong> — funziona subito senza fare nulla.<br>
-        Per ottenere il tuo token gratuito: <strong>1.</strong> Vai su mapillary.com/developer → <strong>2.</strong> Registrati o accedi → <strong>3.</strong> "My apps" → crea un'app → copia il campo <em>Client token</em>.
-      </div>
-    </div>
-
-    <div class="form-group" style="margin-top:24px">
-      <label for="maptiler-key">MapTiler API Key <span style="color:var(--muted);font-weight:300;font-size:12px">— opzionale, puoi lasciare vuoto</span></label>
-      <div class="api-key-row">
-        <div class="form-group" style="margin:0;flex:1">
-          <input type="text" id="maptiler-key" placeholder="Lascia vuoto — non necessario" autocomplete="new-password" spellcheck="false">
-        </div>
-        <a href="https://www.maptiler.com/cloud/" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni chiave →</a>
-      </div>
-      <div class="form-hint">
-        <strong>Non è necessario.</strong> Senza chiave viene usata Esri World Imagery — satellite gratuito, copertura globale, ottima qualità.<br>
-        Inserisci solo se vuoi mappe MapTiler premium: maptiler.com/cloud → crea account (piano Free disponibile) → Dashboard → API Keys → copia la chiave.
-      </div>
-    </div>
-  </section>
-
-  <!-- Altre preferenze -->
+  <!-- Preferenze -->
   <section class="settings-section">
     <h2>Preferenze</h2>
 
@@ -144,8 +108,6 @@ const strideHint = document.getElementById('stride-hint');
 const btnResetStride = document.getElementById('btn-reset-stride');
 const gradeThreshold = document.getElementById('grade-threshold');
 const gradeThresholdVal = document.getElementById('grade-threshold-val');
-const maptilerKey = document.getElementById('maptiler-key');
-const mapillaryToken = document.getElementById('mapillary-token');
 const debugToggle = document.getElementById('debug-toggle');
 
 // ---- Carica preferenze ----
@@ -166,13 +128,6 @@ function loadPrefs() {
     if (parseInt(opt.dataset.val) === lookahead) opt.classList.add('selected');
     opt.querySelector('input').checked = parseInt(opt.dataset.val) === lookahead;
   });
-
-  // Mostra solo se non è il token di default (non vuoto)
-  maptilerKey.value = p.maptiler_key || '';
-  mapillaryToken.value = p.mapillary_token || '';
-
-  const mlyBadge = document.getElementById('mly-status-badge');
-  if (mlyBadge) mlyBadge.style.display = p.mapillary_token ? 'inline' : 'none';
 
   const isDebug = new URLSearchParams(location.search).has('debug');
   debugToggle.checked = isDebug;
@@ -249,10 +204,6 @@ document.getElementById('btn-save').addEventListener('click', () => {
   const lookaheadSelected = document.querySelector('#lookahead-group .radio-option.selected');
   if (lookaheadSelected) store.setPref('lookahead_dist_m', parseInt(lookaheadSelected.dataset.val));
 
-  // Salva solo se non contiene accidentalmente un token Mapillary nel campo MapTiler
-  const maptilerVal = maptilerKey.value.trim();
-  if (!maptilerVal.startsWith('MLY|')) store.setPref('maptiler_key', maptilerVal);
-  store.setPref('mapillary_token', mapillaryToken.value.trim());
 
   // Debug mode: redirect con/senza ?debug=1
   const debugActive = debugToggle.checked;
