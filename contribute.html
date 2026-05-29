@@ -225,13 +225,50 @@
 
   </div><!-- /contribute-form -->
 
-  <!-- SUCCESS -->
+  <!-- SUCCESS: step 1 done, step 2 pending -->
   <div class="contribute-success" id="contribute-success">
-    <div style="font-size:48px">✅</div>
-    <h2>Percorso salvato!</h2>
-    <p style="font-size:14px;color:var(--muted);max-width:400px;text-align:center">Il percorso è stato aggiunto al tuo catalogo locale. Per proporlo nel catalogo pubblico, apri la segnalazione su GitHub.</p>
-    <a id="github-issue-link" href="#" target="_blank" rel="noopener" class="btn btn-primary">Apri proposta su GitHub →</a>
-    <a href="app.html" class="btn btn-secondary">Torna alla home</a>
+
+    <!-- Step completati -->
+    <div style="width:100%;max-width:520px">
+      <div class="submit-step submit-step-done">
+        <div class="submit-step-icon">✅</div>
+        <div class="submit-step-body">
+          <strong>Salvato nel catalogo locale</strong>
+          <span>Il percorso è visibile in "Catalogo" su questo dispositivo.</span>
+        </div>
+      </div>
+
+      <div class="submit-step submit-step-pending" id="step-github-pending">
+        <div class="submit-step-icon">⏳</div>
+        <div class="submit-step-body">
+          <strong>Apri la proposta su GitHub</strong>
+          <span>Per comparire nel catalogo pubblico devi aprire la segnalazione — è pre-compilata, ci vogliono 10 secondi.</span>
+        </div>
+      </div>
+
+      <div class="submit-step submit-step-done" id="step-github-done" style="display:none">
+        <div class="submit-step-icon">✅</div>
+        <div class="submit-step-body">
+          <strong>Proposta inviata su GitHub</strong>
+          <span>Grazie! Riceverai un aggiornamento sulla issue quando il percorso viene revisionato.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA GitHub (visibile finché non confermano) -->
+    <div id="github-cta-block" style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px">
+      <a id="github-issue-link" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="width:100%;justify-content:center" id="btn-open-github">
+        Apri proposta su GitHub →
+      </a>
+      <button class="btn btn-secondary" id="btn-confirm-github" style="width:100%">Ho inviato la segnalazione ✓</button>
+    </div>
+
+    <!-- Stato finale dopo conferma -->
+    <div id="github-confirmed-block" style="display:none;width:100%;max-width:520px;text-align:center">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Perfetto! Torna a Simule e inizia a correre.</p>
+      <a href="app.html" class="btn btn-primary" style="width:100%;justify-content:center">Torna alla home</a>
+    </div>
+
   </div>
 
 </main>
@@ -398,6 +435,14 @@ function submit() {
   document.getElementById('contribute-form').style.display = 'none';
   document.getElementById('contribute-success').classList.add('show');
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // "Ho inviato" confirm button
+  document.getElementById('btn-confirm-github').addEventListener('click', () => {
+    document.getElementById('step-github-pending').style.display = 'none';
+    document.getElementById('step-github-done').style.display = '';
+    document.getElementById('github-cta-block').style.display = 'none';
+    document.getElementById('github-confirmed-block').style.display = '';
+  });
 }
 
 function extractYouTubeId(url) {
