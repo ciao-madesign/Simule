@@ -98,11 +98,14 @@ input:focus, select:focus {
   font-weight: 900;
   font-size: 22px;
   letter-spacing: 0.08em;
-  color: var(--accent);
+  color: var(--fg);
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.logo span { color: var(--text); }
+.logo span { color: var(--accent); }
 
 /* ---- Buttons ---- */
 .btn {
