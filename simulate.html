@@ -140,6 +140,10 @@
         <span class="hud-stat-value" id="stat-ele">— <span class="unit">m</span></span>
       </div>
       <div class="hud-stat">
+        <span class="hud-stat-label">Dislivello +</span>
+        <span class="hud-stat-value" id="stat-elev-gain">+0 <span class="unit">m</span></span>
+      </div>
+      <div class="hud-stat">
         <span class="hud-stat-label">Pace</span>
         <span class="hud-stat-value" id="stat-pace">—:— <span class="unit">/km</span></span>
       </div>
@@ -148,7 +152,7 @@
     <!-- Strip altimetrica -->
     <div class="hud-elevation">
       <div class="elevation-strip-bg">
-        <svg id="elevation-strip-svg" viewBox="0 0 600 60" preserveAspectRatio="none"></svg>
+        <svg id="elevation-strip-svg" viewBox="0 0 600 100" preserveAspectRatio="none"></svg>
       </div>
     </div>
 
@@ -463,12 +467,23 @@ function updatePaceLiveDisplay(paceMinKm) {
   paceEl.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
 }
 
+// ---- Tracking dislivello accumulato ----
+let prevEle = null;
+let totalElevGain = 0;
+
 // ---- Aggiornamento HUD dal simulator ----
 let lastElevStrip = 0;
 
 function handleSimulatorUpdate(state) {
   const { current_dist, remaining_dist, current_point, next_point, heading,
           current_grade, lookahead_grade, speed_ms, pace_min_km, total_dist } = state;
+
+  // Dislivello positivo accumulato
+  if (prevEle !== null) {
+    const diff = current_point.ele - prevEle;
+    if (diff > 0) totalElevGain += diff;
+  }
+  prevEle = current_point.ele;
 
   // Pendenza
   const gradeEl = document.getElementById('hud-grade');
@@ -495,6 +510,7 @@ function handleSimulatorUpdate(state) {
   document.getElementById('stat-done').innerHTML = `${(current_dist/1000).toFixed(2)} <span class="unit">km</span>`;
   document.getElementById('stat-remaining').innerHTML = `${(remaining_dist/1000).toFixed(2)} <span class="unit">km</span>`;
   document.getElementById('stat-ele').innerHTML = `${Math.round(current_point.ele)} <span class="unit">m</span>`;
+  document.getElementById('stat-elev-gain').innerHTML = `+${Math.round(totalElevGain)} <span class="unit">m</span>`;
 
   if (pace_min_km > 0) {
     const min = Math.floor(pace_min_km);
@@ -526,41 +542,127 @@ function handleSimulatorUpdate(state) {
 function renderElevationStrip(fromDist) {
   const svg = document.getElementById('elevation-strip-svg');
   const WINDOW = 5000;
+  const totalRoute = route[route.length - 1].dist_from_start;
   const profile = buildElevationProfile(route, fromDist, WINDOW);
   if (profile.length < 2) return;
 
   const eles = profile.map(p => p.ele);
-  const minE = Math.min(...eles), maxE = Math.max(...eles);
-  const range = Math.max(maxE - minE, 1);
+  const minE = Math.min(...eles);
+  const maxE = Math.max(...eles);
+  // Range minimo 30m per evitare schiacciamento su terreni piatti
+  const range = Math.max(maxE - minE, 30);
 
-  const W = 600, H = 60, PAD = 4;
-  const pts = profile.map((p, i) => {
-    const x = (i / (profile.length - 1)) * (W - PAD*2) + PAD;
-    const y = H - PAD - ((p.ele - minE) / range) * (H - PAD*2);
-    return `${x},${y}`;
-  });
+  const W = 600, H = 100;
+  const PX = 6;          // padding laterale
+  const PY_TOP = 22;     // spazio per label picchi
+  const PY_BOT = 18;     // spazio per label km
+  const plotH = H - PY_TOP - PY_BOT;
+
+  const toX = (i) => PX + (i / (profile.length - 1)) * (W - PX * 2);
+  const toY = (ele) => PY_TOP + plotH - ((ele - minE) / range) * plotH;
+
+  const pts = profile.map((p, i) => `${toX(i).toFixed(1)},${toY(p.ele).toFixed(1)}`);
+  const pathD = `M${pts.join('L')}`;
+  const fillD = `${pathD}L${(W - PX).toFixed(1)},${H}L${PX},${H}Z`;
 
   const color = isRoadMode ? '#00b8ff' : '#00e5a0';
-  const pathD = `M${pts.join('L')}`;
-  const fillD = `${pathD}L${W-PAD},${H}L${PAD},${H}Z`;
 
-  // Cursore: sempre all'inizio dello strip (posizione corrente)
-  const curX = PAD;
-  const curY = H - PAD - ((profile[0].ele - minE) / range) * (H - PAD*2);
+  // ---- Picchi (massimi locali significativi) ----
+  const peaks = findElevationPeaks(eles, 0.2);
+
+  // ---- Label km ogni ~1km (max 5 label) ----
+  const kmLabelInterval = Math.ceil(WINDOW / 1000 / 5) * 1000;
+  const kmLabels = [];
+  for (let d = kmLabelInterval; d < WINDOW - 200; d += kmLabelInterval) {
+    const frac = d / WINDOW;
+    const idx = Math.round(frac * (profile.length - 1));
+    const kmVal = ((fromDist + d) / 1000).toFixed(1);
+    kmLabels.push({ x: toX(idx), label: `${kmVal}km` });
+  }
+
+  // ---- Traguardo (se nel range visibile) ----
+  let finishSVG = '';
+  const remainingInWindow = totalRoute - fromDist;
+  if (remainingInWindow > 0 && remainingInWindow <= WINDOW) {
+    const frac = remainingInWindow / WINDOW;
+    const idx = Math.round(frac * (profile.length - 1));
+    const fx = toX(Math.min(idx, profile.length - 1));
+    const fy = toY(eles[Math.min(idx, eles.length - 1)]);
+    finishSVG = `
+      <line x1="${fx}" y1="${fy}" x2="${fx}" y2="${H - PY_BOT}" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"/>
+      <text x="${fx + 3}" y="${PY_TOP - 4}" fill="#ff4444" font-size="9" font-family="Barlow Condensed, sans-serif" font-weight="700">ARRIVO</text>
+    `;
+  }
+
+  // ---- Cursore posizione attuale ----
+  const curX = PX;
+  const curY = toY(eles[0]);
+
+  // ---- Assembla SVG ----
+  const peaksSVG = peaks.map(pk => {
+    const x = toX(pk.idx);
+    const y = toY(eles[pk.idx]);
+    return `
+      <circle cx="${x}" cy="${y}" r="2.5" fill="${color}" opacity="0.8"/>
+      <text x="${x}" y="${y - 5}" fill="${color}" font-size="9" font-family="Barlow Condensed, sans-serif"
+            font-weight="700" text-anchor="middle" opacity="0.9">${Math.round(eles[pk.idx])}m</text>
+    `;
+  }).join('');
+
+  const kmLabelsSVG = kmLabels.map(kl => `
+    <line x1="${kl.x}" y1="${H - PY_BOT}" x2="${kl.x}" y2="${H - PY_BOT + 4}" stroke="${color}" stroke-width="1" opacity="0.4"/>
+    <text x="${kl.x}" y="${H - 4}" fill="#5a6878" font-size="9" font-family="Barlow Condensed, sans-serif"
+          text-anchor="middle">${kl.label}</text>
+  `).join('');
+
+  // Label quota corrente a sinistra
+  const curEleLabel = `
+    <text x="${curX + 10}" y="${curY - 5}" fill="white" font-size="9" font-family="Barlow Condensed, sans-serif"
+          font-weight="700" opacity="0.9">${Math.round(eles[0])}m</text>
+  `;
 
   svg.innerHTML = `
     <defs>
       <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
-        <stop offset="100%" stop-color="${color}" stop-opacity="0.05"/>
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.45"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.04"/>
       </linearGradient>
     </defs>
     <path d="${fillD}" fill="url(#sg)"/>
-    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.5"/>
-    <circle cx="${curX}" cy="${curY}" r="5" fill="${color}" stroke="white" stroke-width="2">
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8"/>
+    ${peaksSVG}
+    ${kmLabelsSVG}
+    ${finishSVG}
+    ${curEleLabel}
+    <circle cx="${curX}" cy="${curY}" r="5" fill="${color}" stroke="white" stroke-width="2.5">
       <animate attributeName="r" values="5;7;5" dur="1.5s" repeatCount="indefinite"/>
     </circle>
   `;
+}
+
+function findElevationPeaks(eles, minRelativeHeight = 0.2) {
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
+  const threshold = minE + (maxE - minE) * minRelativeHeight;
+  const peaks = [];
+
+  for (let i = 3; i < eles.length - 3; i++) {
+    if (eles[i] < threshold) continue;
+    const isLocalMax = eles[i] > eles[i-1] && eles[i] > eles[i+1]
+                    && eles[i] >= eles[i-2] && eles[i] >= eles[i+2];
+    if (isLocalMax) peaks.push({ idx: i, ele: eles[i] });
+  }
+
+  // Tieni al massimo 3 picchi, separati da almeno il 15% della lunghezza
+  peaks.sort((a, b) => b.ele - a.ele);
+  const minSep = Math.floor(eles.length * 0.15);
+  const filtered = [];
+  for (const pk of peaks) {
+    if (filtered.every(f => Math.abs(f.idx - pk.idx) >= minSep)) {
+      filtered.push(pk);
+      if (filtered.length >= 3) break;
+    }
+  }
+  return filtered;
 }
 
 // ---- Controls ----
