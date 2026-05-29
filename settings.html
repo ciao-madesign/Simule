@@ -76,25 +76,28 @@
     <h2>Chiavi API</h2>
 
     <div class="form-group">
-      <label for="maptiler-key">MapTiler API Key</label>
+      <label for="mapillary-token">
+        Mapillary Access Token
+        <span style="background:rgba(0,229,160,0.15);color:var(--accent);border:1px solid rgba(0,229,160,0.3);border-radius:100px;padding:2px 8px;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:0.05em;margin-left:8px">CONSIGLIATO</span>
+      </label>
+      <div class="api-key-row">
+        <div class="form-group" style="margin:0;flex:1">
+          <input type="text" id="mapillary-token" placeholder="Incolla qui il tuo token Mapillary" autocomplete="off">
+        </div>
+        <a href="https://www.mapillary.com/developer" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Registrati →</a>
+      </div>
+      <span class="form-hint">Necessario per la streetview in modalità Road. Mapillary ha copertura globale capillare. <strong>Registrazione gratuita</strong> su mapillary.com → Developer → Access Token.</span>
+    </div>
+
+    <div class="form-group">
+      <label for="maptiler-key">MapTiler API Key <span style="color:var(--muted);font-weight:300">(opzionale)</span></label>
       <div class="api-key-row">
         <div class="form-group" style="margin:0;flex:1">
           <input type="text" id="maptiler-key" placeholder="Incolla qui la tua chiave MapTiler" autocomplete="off">
         </div>
         <a href="https://www.maptiler.com/cloud/" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni chiave →</a>
       </div>
-      <span class="form-hint">Necessaria per la visualizzazione 3D offroad con terrain. 100.000 richieste/mese gratis.</span>
-    </div>
-
-    <div class="form-group">
-      <label for="mapillary-token">Mapillary Client Token</label>
-      <div class="api-key-row">
-        <div class="form-group" style="margin:0;flex:1">
-          <input type="text" id="mapillary-token" placeholder="Incolla qui il tuo token Mapillary" autocomplete="off">
-        </div>
-        <a href="https://www.mapillary.com/developer/api-documentation" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni token →</a>
-      </div>
-      <span class="form-hint">Fallback immagini stradali quando KartaView non ha copertura. Gratuito.</span>
+      <span class="form-hint">Mappa satellite di qualità superiore tramite MapTiler. Senza chiave viene usato Esri World Imagery (gratuito, qualità ottima).</span>
     </div>
   </section>
 
