@@ -66,6 +66,12 @@ async function fetchPanoramax(lat, lon, heading) {
   return null;
 }
 
+export async function fetchNearbyImage(lat, lon, heading) {
+  return await fetchMapillary(lat, lon, heading)
+      || await fetchPanoramax(lat, lon, heading)
+      || null;
+}
+
 export async function checkCoverage(points) {
   const SAMPLE_M = 250;
   const total = points[points.length - 1].dist_from_start;

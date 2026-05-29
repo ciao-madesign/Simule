@@ -11,20 +11,34 @@
 
     #maplibre-container { position: absolute; inset: 0; }
 
-    /* Street view overlay (road mode, sopra MapLibre) */
-    #street-view-wrap {
-      position: absolute; inset: 0;
-      display: none; align-items: center; justify-content: center;
-      overflow: hidden; transition: background 0.4s;
+    /* Waypoint photo card */
+    #waypoint-photo {
+      position: absolute; bottom: 88px; right: 20px;
+      width: 260px; height: 164px;
+      border-radius: 10px; overflow: hidden;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.5s;
+      z-index: 10;
+      box-shadow: 0 6px 32px rgba(0,0,0,0.65);
+      border: 1.5px solid rgba(255,255,255,0.1);
     }
-    #mly-viewer { position: absolute; inset: 0; visibility: hidden; }
-    #street-view-img { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 1; }
-    #no-image-badge {
-      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-      background: rgba(10,12,15,0.75); border: 1px solid var(--border);
-      border-radius: 100px; padding: 5px 14px;
-      font-size: 12px; color: var(--muted); white-space: nowrap;
-      backdrop-filter: blur(6px); display: none; z-index: 2;
+    #waypoint-photo.wp-visible { opacity: 1; pointer-events: auto; }
+    #waypoint-photo > img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #waypoint-photo-label {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(10,12,15,0.72); backdrop-filter: blur(4px);
+      color: var(--text); font-size: 11px;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      padding: 2px 10px; border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    #waypoint-photo-close {
+      position: absolute; top: 6px; right: 6px;
+      width: 22px; height: 22px; padding: 0;
+      background: rgba(10,12,15,0.72); backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 50%;
+      color: var(--muted); font-size: 10px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
     }
 
     /* Video embed view */
@@ -108,11 +122,11 @@
     <!-- MapLibre: sempre sfondo (city in road, satellite+3D in trail) -->
     <div id="maplibre-container"></div>
 
-    <!-- Street view overlay (road mode senza video) -->
-    <div id="street-view-wrap">
-      <div id="mly-viewer"></div>
-      <img id="street-view-img" src="" alt="Street view" style="display:none">
-      <div id="no-image-badge">🗺 Mappa attiva</div>
+    <!-- Waypoint photo card (flash 3s ogni km) -->
+    <div id="waypoint-photo">
+      <img id="waypoint-photo-img" src="" alt="">
+      <div id="waypoint-photo-label"></div>
+      <button id="waypoint-photo-close">✕</button>
     </div>
 
     <!-- Video embed (sostituisce tutto quando attivo) -->
@@ -203,6 +217,7 @@
         <button class="multiplier-btn active" data-mult="1">×1</button>
         <button class="multiplier-btn" data-mult="1.5">×1.5</button>
         <button class="multiplier-btn" data-mult="2">×2</button>
+        <button class="multiplier-btn" id="btn-waypoint-toggle" title="Foto waypoint on/off" style="margin-left:6px">📸</button>
       </div>
     </div>
   </div>
@@ -240,13 +255,12 @@ import simulator from './js/simulator.js';
 import { parseGPXString } from './js/gpx-parser.js';
 import { buildElevationProfile } from './js/grade-calc.js';
 import MaplibreView from './js/maplibre-view.js';
-import StreetView from './js/streetview.js';
+import { fetchNearbyImage } from './js/streetview.js';
 import debug from './js/debug.js';
 
 let route = null;
 let meta = null;
 let maplibreView = null;
-let streetView = null;
 let pipMap = null;
 let pipMarker = null;
 let ytPlayer = null;
@@ -259,7 +273,10 @@ let totalElevGain = 0;
 let lastElevStrip = 0;
 let lfMap = null;
 let lfMarker = null;
-let currentSimDist = 0; // aggiornato da handleSimulatorUpdate, usato per risincronizzare il video
+let currentSimDist = 0;
+let waypointPhotosEnabled = true;
+let lastWaypointKm = -1;
+let waypointHideTimer = null;
 
 // ---- Carica percorso ----
 async function init() {
@@ -320,36 +337,8 @@ async function initView() {
     document.getElementById('video-sync-badge').style.display = 'block';
     initPipMap();
     initVideoPlayer();
-  } else if (isRoadMode) {
-    // Road senza video: streetview 360° overlay sopra MapLibre satellite
-    const svWrap = document.getElementById('street-view-wrap');
-    svWrap.style.display = 'flex';
-    svWrap.style.background = 'transparent';
-    streetView = new StreetView();
-    streetView.init(
-      document.getElementById('street-view-img'),
-      document.getElementById('no-image-badge'),
-      svWrap,
-      document.getElementById('mly-viewer')
-    );
-    // Carica mapillary-js e inizializza viewer 360° interattivo
-    await loadMapillaryJS();
-    const mlyToken = store.prefs.mapillary_token;
-    if (window.mapillary?.Viewer && mlyToken) {
-      try {
-        const viewer = new mapillary.Viewer({
-          accessToken: mlyToken,
-          container: document.getElementById('mly-viewer'),
-          component: { cover: false, sequence: false }
-        });
-        streetView.setMapillaryViewer(viewer);
-        debug.log('Mapillary viewer 360° pronto');
-      } catch (e) {
-        debug.warn('Mapillary Viewer init fallback a img statica:', e);
-      }
-    }
   }
-  // Trail senza video: solo MapLibre 3D satellite (nessun overlay)
+  // Road e trail senza video: solo mappa satellite MapLibre
 }
 
 function initLeafletBg() {
@@ -653,9 +642,6 @@ function handleSimulatorUpdate(state) {
   }
 
   if (!videoMeta) {
-    if (isRoadMode && streetView) {
-      streetView.update({ current_point, heading }).catch(() => {});
-    }
     if (maplibreLoaded && maplibreView) {
       maplibreView.update({ current_point, next_point, heading });
     } else if (lfMap && lfMarker) {
@@ -663,6 +649,7 @@ function handleSimulatorUpdate(state) {
       lfMarker.setLatLng(ll);
       lfMap.setView(ll, lfMap.getZoom());
     }
+    checkWaypoint(current_dist, current_point, heading);
   }
 }
 
@@ -817,21 +804,42 @@ function initControls() {
     if (e.code === 'ArrowRight') simulator.seekBy(100);
     if (e.code === 'ArrowLeft')  simulator.seekBy(-100);
   });
+
+  document.getElementById('btn-waypoint-toggle').addEventListener('click', () => {
+    waypointPhotosEnabled = !waypointPhotosEnabled;
+    const btn = document.getElementById('btn-waypoint-toggle');
+    btn.style.opacity = waypointPhotosEnabled ? '1' : '0.35';
+    if (!waypointPhotosEnabled) hideWaypointPhoto();
+  });
+
+  document.getElementById('waypoint-photo-close').addEventListener('click', hideWaypointPhoto);
 }
 
-// ---- Mapillary JS lazy load ----
-async function loadMapillaryJS() {
-  return new Promise(resolve => {
-    if (window.mapillary?.Viewer) { resolve(); return; }
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/mapillary-js@4/dist/mapillary.min.css';
-    document.head.appendChild(link);
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/mapillary-js@4/dist/mapillary.min.js';
-    script.onload = resolve; script.onerror = resolve;
-    document.head.appendChild(script);
-  });
+// ---- Waypoint photo flash ----
+function hideWaypointPhoto() {
+  clearTimeout(waypointHideTimer);
+  document.getElementById('waypoint-photo').classList.remove('wp-visible');
+}
+
+async function checkWaypoint(current_dist, current_point, heading) {
+  if (!waypointPhotosEnabled) return;
+  const km = Math.floor(current_dist / 1000);
+  if (km < 1 || km === lastWaypointKm) return;
+  lastWaypointKm = km;
+
+  const img = await fetchNearbyImage(current_point.lat, current_point.lon, heading);
+  if (!img) return;
+
+  const el = document.getElementById('waypoint-photo');
+  const imgEl = document.getElementById('waypoint-photo-img');
+  const labelEl = document.getElementById('waypoint-photo-label');
+
+  imgEl.src = img.url;
+  labelEl.textContent = `📍 km ${km}`;
+
+  clearTimeout(waypointHideTimer);
+  el.classList.add('wp-visible');
+  waypointHideTimer = setTimeout(hideWaypointPhoto, 3000);
 }
 
 // ---- MapLibre lazy load ----
