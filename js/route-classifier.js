@@ -69,7 +69,7 @@ export async function classifyRoute(points) {
 
   let mode;
   if (totalKnown === 0) {
-    mode = 'offroad';
+    mode = 'road'; // fallback a road: percorsi urbani sono più comuni
   } else {
     mode = (roadCount / totalKnown) >= 0.7 ? 'road' : 'offroad';
   }

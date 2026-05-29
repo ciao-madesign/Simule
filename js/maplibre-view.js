@@ -55,25 +55,28 @@ class MaplibreView {
 
         this._map.on('load', () => {
           // Terrain: MapTiler se disponibile, altrimenti AWS Terrarium gratuito
-          if (key) {
-            this._map.addSource('terrain', {
-              type: 'raster-dem',
-              url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${key}`,
-              tileSize: 256
-            });
-          } else {
-            this._map.addSource('terrain', {
-              type: 'raster-dem',
-              tiles: AWS_TERRAIN_TILES,
-              tileSize: 256,
-              encoding: 'terrarium',
-              minzoom: 0,
-              maxzoom: 14
-            });
+          try {
+            if (key) {
+              this._map.addSource('terrain', {
+                type: 'raster-dem',
+                url: `https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json?key=${key}`,
+                tileSize: 256
+              });
+            } else {
+              this._map.addSource('terrain', {
+                type: 'raster-dem',
+                tiles: AWS_TERRAIN_TILES,
+                tileSize: 256,
+                encoding: 'terrarium',
+                minzoom: 0,
+                maxzoom: 14
+              });
+            }
+            this._map.setTerrain({ source: 'terrain', exaggeration: 1.8 });
+            this._map.setFog({ color: '#1a2028', 'high-color': '#0a0c0f', 'horizon-blend': 0.04 });
+          } catch (e) {
+            debug.warn('Terrain non disponibile:', e.message);
           }
-
-          this._map.setTerrain({ source: 'terrain', exaggeration: 1.8 });
-          this._map.setFog({ color: '#1a2028', 'high-color': '#0a0c0f', 'horizon-blend': 0.04 });
 
           // Traccia GPX
           this._map.addSource('route', {
@@ -81,28 +84,29 @@ class MaplibreView {
             data: routeToGeoJSON(points)
           });
 
-          // Contorno (glow)
+          // Contorno largo (effetto glow senza blur che causa problemi in v4)
           this._map.addLayer({
             id: 'route-glow',
             type: 'line',
             source: 'route',
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
               'line-color': '#00e5a0',
-              'line-width': 6,
-              'line-opacity': 0.25,
-              'line-blur': 4
+              'line-width': 10,
+              'line-opacity': 0.18
             }
           });
 
-          // Linea principale
+          // Linea principale spessa e visibile
           this._map.addLayer({
             id: 'route-line',
             type: 'line',
             source: 'route',
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
               'line-color': '#00e5a0',
-              'line-width': 2.5,
-              'line-opacity': 0.9
+              'line-width': 4,
+              'line-opacity': 1
             }
           });
 

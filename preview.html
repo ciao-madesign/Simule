@@ -7,9 +7,22 @@
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
   <style>
-    .preview-topbar { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface); }
-    .preview-topbar .route-name { flex:1; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .preview-topbar { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface); flex-wrap:wrap; }
+    .preview-topbar .route-name { flex:1; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
     #preview-map .leaflet-container { background:#0a0c0f; }
+
+    /* Toggle Road / Trail */
+    .mode-toggle { display:flex; gap:4px; flex-shrink:0; }
+    .mode-toggle-btn {
+      padding:5px 14px; border-radius:100px;
+      font-family:'Barlow Condensed',sans-serif; font-weight:700;
+      font-size:12px; letter-spacing:0.06em; text-transform:uppercase;
+      border:1px solid var(--border); background:var(--surface2); color:var(--muted);
+      cursor:pointer; transition:all 0.15s;
+    }
+    .mode-toggle-btn:hover { color:var(--text); border-color:var(--text); }
+    .mode-toggle-btn.active-road { border-color:var(--accent2); color:var(--accent2); background:rgba(0,184,255,0.12); }
+    .mode-toggle-btn.active-trail { border-color:var(--accent); color:var(--accent); background:rgba(0,229,160,0.12); }
   </style>
 </head>
 <body>
@@ -17,7 +30,10 @@
 <div id="topbar" class="preview-topbar">
   <a href="index.html" class="btn btn-secondary" style="padding:7px 12px;font-size:13px;flex-shrink:0">← Indietro</a>
   <span id="route-name" class="route-name">Caricamento…</span>
-  <span id="mode-badge" class="badge"></span>
+  <div class="mode-toggle" id="mode-toggle" style="display:none">
+    <button class="mode-toggle-btn" id="btn-mode-road" title="Modalità road: streetview">🏙 Road</button>
+    <button class="mode-toggle-btn" id="btn-mode-trail" title="Modalità trail: mappa 3D">🏔 Trail</button>
+  </div>
   <button id="btn-start" class="btn btn-primary btn-lg" disabled>▶ Avvia</button>
 </div>
 
@@ -153,12 +169,41 @@ function initView() {
   if (currentMeta.mode === 'road') checkRoadCoverage();
 }
 
-// ---- Topbar ----
+// ---- Topbar + toggle Road/Trail ----
 function renderTopbar() {
   routeNameEl.textContent = currentMeta.name;
-  modeBadgeEl.className = 'badge ' + (currentMeta.mode === 'road' ? 'badge-road' : 'badge-trail');
-  modeBadgeEl.textContent = currentMeta.mode === 'road' ? '🏙 Road' : '🏔 Trail';
+  updateModeToggle(currentMeta.mode);
+  document.getElementById('mode-toggle').style.display = 'flex';
   btnStart.disabled = false;
+}
+
+function updateModeToggle(mode) {
+  const btnRoad = document.getElementById('btn-mode-road');
+  const btnTrail = document.getElementById('btn-mode-trail');
+  btnRoad.className = 'mode-toggle-btn' + (mode === 'road' ? ' active-road' : '');
+  btnTrail.className = 'mode-toggle-btn' + (mode === 'offroad' ? ' active-trail' : '');
+}
+
+document.getElementById('btn-mode-road').addEventListener('click', () => switchMode('road'));
+document.getElementById('btn-mode-trail').addEventListener('click', () => switchMode('offroad'));
+
+function switchMode(mode) {
+  if (!currentMeta) return;
+  currentMeta.mode = mode;
+  store.set('routeMeta', currentMeta);
+  // Aggiorna anche nel percorso recente salvato
+  const routeId = sessionStorage.getItem('simule_active_route_id');
+  if (routeId) {
+    const r = store.recentRoutes.find(r => r.id === routeId);
+    if (r) { r.mode = mode; store._saveRecentRoutes(); }
+  }
+  updateModeToggle(mode);
+  if (mode === 'road') {
+    checkRoadCoverage();
+    document.getElementById('coverage-banner').style.display = 'flex';
+  } else {
+    document.getElementById('coverage-banner').style.display = 'none';
+  }
 }
 
 // ---- Stats ----

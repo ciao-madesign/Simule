@@ -39,7 +39,7 @@ const listeners = {};
 const store = {
   route: null,
   routeMeta: {},
-  sensorType: null,
+  sensorType: sessionStorage.getItem('simule_sensor_type') || null,
   sensorOptions: {},
   speedMultiplier: 1.0,
   isPlaying: false,
@@ -54,6 +54,7 @@ const store = {
 
     if (key === 'prefs') this._savePrefs();
     if (key === 'recentRoutes') this._saveRecentRoutes();
+    if (key === 'sensorType') sessionStorage.setItem('simule_sensor_type', value || '');
   },
 
   setPref(key, value) {

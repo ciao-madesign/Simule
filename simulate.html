@@ -206,8 +206,8 @@
 </div>
 
 
-<!-- Overlay connessione sensore BLE/GPS -->
-<div id="sensor-overlay">
+<!-- Overlay connessione sensore BLE/GPS (hidden di default, mostrato solo per BLE/GPS) -->
+<div id="sensor-overlay" class="hidden">
   <div class="sensor-card">
     <h2 id="sensor-overlay-title">Connessione sensore</h2>
     <p id="sensor-overlay-desc">Connessione in corso…</p>
@@ -358,11 +358,13 @@ function initSensorOverlay() {
   const info = LABELS[sensorType];
 
   if (!info) {
-    overlay.classList.add('hidden');
+    // Input manuale: vai diretto alla selezione pace, senza overlay
     showManualInput(sensorType);
     return;
   }
 
+  // Sensore hardware: mostra overlay di connessione
+  overlay.classList.remove('hidden');
   title.textContent = info[0];
   desc.textContent = info[1];
 
