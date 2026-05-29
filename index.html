@@ -38,6 +38,18 @@
 
 </main>
 
+<!-- Catalogo percorsi -->
+<section class="catalog-section">
+  <div class="catalog-inner">
+    <h3 class="catalog-title">Catalogo percorsi</h3>
+    <p class="catalog-sub">Percorsi reali da tutto il mondo, alcuni abbinati a video POV per un'esperienza immersiva.</p>
+    <div class="catalog-grid" id="catalog-grid"></div>
+    <p class="catalog-contribute">
+      Vuoi contribuire? Carica il tuo GPX dalla home e abbina un video POV nella schermata di anteprima.
+    </p>
+  </div>
+</section>
+
 <div class="loading-overlay hidden" id="loading">
   <div class="spinner"></div>
   <p id="loading-msg">Analisi percorso in corso…</p>
@@ -179,6 +191,98 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ---- Catalogo ----
+const CATALOG = [
+  {
+    name: 'Roma – Appia Antica',
+    path: 'data/sample-routes/road-roma.gpx',
+    mode: 'road',
+    region: 'Roma, Italia',
+    description: 'Un classico anello storico tra basoli romani e pini marittimi.',
+    video: null
+  },
+  {
+    name: 'Trail Dolomiti',
+    path: 'data/sample-routes/trail-dolomiti.gpx',
+    mode: 'offroad',
+    region: 'Dolomiti, Italia',
+    description: 'Alta quota tra le pale dolomitiche, con dislivello mozzafiato.',
+    video: null
+  },
+  {
+    name: 'Cinque Terre Coastal Trail',
+    path: 'data/sample-routes/misto-cinque-terre.gpx',
+    mode: 'offroad',
+    region: 'Liguria, Italia',
+    description: 'Sentiero panoramico sul mare con vista sui borghi colorati.',
+    video: { type: 'youtube', id: 'dQw4w9WgXcQ', avgSpeedMs: 2.5, durationSeconds: 3600 }
+  }
+];
+
+async function renderCatalog() {
+  const grid = document.getElementById('catalog-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (const entry of CATALOG) {
+    const card = document.createElement('div');
+    card.className = 'catalog-card';
+    const icon = entry.mode === 'road' ? '🏙' : '🏔';
+    const modeCls = entry.mode === 'road' ? 'road' : 'trail';
+    const modeLabel = entry.mode === 'road' ? 'Road' : 'Trail';
+    const videoBadge = entry.video
+      ? '<span class="catalog-video-badge">▶ Video</span>'
+      : '';
+    card.innerHTML = `
+      <div class="catalog-card-header">
+        <div class="route-item-icon ${modeCls}" style="width:40px;height:40px;font-size:20px">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div class="catalog-card-name">${escHtml(entry.name)}</div>
+          <div class="catalog-card-region">${escHtml(entry.region)}</div>
+        </div>
+        ${videoBadge}
+      </div>
+      <div class="catalog-card-desc">${escHtml(entry.description)}</div>
+      <div class="catalog-card-footer">
+        <span class="badge badge-${modeCls === 'road' ? 'road' : 'trail'}">${modeLabel}</span>
+        <span class="catalog-card-action">Carica →</span>
+      </div>
+    `;
+    card.addEventListener('click', () => loadCatalogEntry(entry));
+    grid.appendChild(card);
+  }
+}
+
+async function loadCatalogEntry(entry) {
+  loading.classList.remove('hidden');
+  loadingMsg.textContent = 'Caricamento percorso catalogo…';
+  try {
+    const resp = await fetch(entry.path);
+    if (!resp.ok) throw new Error('File non trovato');
+    const text = await resp.text();
+    const points = await parseGPXString(text);
+    const meta = computeRouteMeta(points, entry.name + '.gpx');
+    meta.mode = entry.mode;
+    meta.video = entry.video || null;
+    const id = crypto.randomUUID();
+    const routeObj = {
+      id, name: entry.name, mode: entry.mode,
+      distance_km: meta.distance_km, elevation_gain: meta.elevation_gain,
+      gpx_data: text, added_at: Date.now(), segments: [],
+      max_elevation: meta.max_elevation, max_grade: meta.max_grade,
+      avg_grade: meta.avg_grade, elevation_loss: meta.elevation_loss,
+      video: entry.video || null
+    };
+    store.set('route', points);
+    store.set('routeMeta', meta);
+    store.addRecentRoute(routeObj);
+    sessionStorage.setItem('simule_active_route_id', id);
+    window.location.href = 'preview.html';
+  } catch (err) {
+    loading.classList.add('hidden');
+    showToast('Errore caricamento: ' + err.message, 'error');
+  }
+}
+
 // ---- Percorsi di esempio ----
 async function loadSampleRoutes() {
   const sampleFiles = [
@@ -216,6 +320,7 @@ async function loadSampleRoutes() {
 
 // ---- Init ----
 renderRecent();
+renderCatalog();
 loadSampleRoutes();
 </script>
 </body>
