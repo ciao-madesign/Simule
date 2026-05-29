@@ -1,9 +1,13 @@
-// Vista road: Mapillary come unica sorgente (copertura globale)
-// KartaView rimosso — copertura insufficiente
+// Vista road: Mapillary (token) → Panoramax (no auth) → satellite
 import debug from './debug.js';
 import store from './store.js';
 
 const MAPILLARY_URL = 'https://graph.mapillary.com/images';
+// Panoramax: progetto open street imagery (IGN + community) — no autenticazione
+const PANORAMAX_INSTANCES = [
+  'https://api.panoramax.xyz/api',
+  'https://panoramax.ign.fr/api'
+];
 
 function angleDiff(a, b) {
   return Math.abs(((a - b) + 180) % 360 - 180);
@@ -28,10 +32,41 @@ async function fetchMapillary(lat, lon, heading) {
   } catch { return null; }
 }
 
-export async function checkCoverage(points) {
-  const token = store.prefs.mapillary_token;
-  if (!token) return { percent: 0, source_map: [] };
+async function fetchPanoramax(lat, lon, heading) {
+  const margin = 0.0006;
+  const bbox = `${lon - margin},${lat - margin},${lon + margin},${lat + margin}`;
+  for (const base of PANORAMAX_INSTANCES) {
+    try {
+      const url = `${base}/collections/pictures/items?bbox=${bbox}&limit=15`;
+      const resp = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!resp.ok) continue;
+      const data = await resp.json();
+      if (!data.features?.length) continue;
 
+      let best = null, bestScore = Infinity;
+      for (const f of data.features) {
+        // pers:kappa = angolo bussola in gradi da nord (standard STAC extension)
+        const kappa = f.properties?.['pers:kappa'] ?? f.properties?.heading ?? 0;
+        const score = heading !== undefined ? angleDiff(kappa, heading) : 0;
+        if (score < bestScore) { bestScore = score; best = f; }
+      }
+      if (!best) continue;
+
+      // Cerca URL immagine in assets (hd > sd > thumb) oppure nei links
+      const imgUrl = best.assets?.hd?.href
+        || best.assets?.sd?.href
+        || best.assets?.thumb?.href
+        || best.links?.find(l => l.rel === 'enclosure' || l.type?.startsWith('image/'))?.href;
+      if (!imgUrl) continue;
+
+      const kappa = best.properties?.['pers:kappa'] ?? best.properties?.heading ?? 0;
+      return { url: imgUrl, heading: kappa, source: 'panoramax' };
+    } catch { continue; }
+  }
+  return null;
+}
+
+export async function checkCoverage(points) {
   const SAMPLE_M = 250;
   const total = points[points.length - 1].dist_from_start;
   const samples = [];
@@ -42,9 +77,10 @@ export async function checkCoverage(points) {
 
   let covered = 0;
   const sourceMap = [];
-  const batch = samples.slice(0, 24);
+  const batch = samples.slice(0, 16);
   await Promise.allSettled(batch.map(async pt => {
-    const img = await fetchMapillary(pt.lat, pt.lon);
+    const img = await fetchMapillary(pt.lat, pt.lon)
+             || await fetchPanoramax(pt.lat, pt.lon);
     if (img) { covered++; sourceMap.push({ dist: pt.dist_from_start, source: img.source }); }
   }));
   return {
@@ -66,23 +102,20 @@ class StreetView {
     this._imgEl = imgElement;
     this._badgeEl = badgeElement;
     this._wrapEl = wrapElement;
-
-    // Senza token Mapillary mostra subito satellite con suggerimento
-    if (!store.prefs.mapillary_token) {
-      this._showBadge('🗺 Satellite · aggiungi token Mapillary in Impostazioni per streetview');
-      if (this._wrapEl) this._wrapEl.style.background = 'transparent';
-    }
+    // Mostra subito satellite; il badge sparirà alla prima immagine trovata
+    if (this._wrapEl) this._wrapEl.style.background = 'transparent';
+    this._showBadge('🗺 Satellite');
   }
 
   async update({ current_point, heading }) {
-    if (!store.prefs.mapillary_token) return; // satellite visibile sotto
-
     const { lat, lon } = current_point;
     const cacheKey = `${lat.toFixed(4)},${lon.toFixed(4)}`;
 
     let img = this._cache.get(cacheKey);
     if (img === undefined) {
-      img = await fetchMapillary(lat, lon, heading) || null;
+      img = await fetchMapillary(lat, lon, heading)
+         || await fetchPanoramax(lat, lon, heading)
+         || null;
       this._cache.set(cacheKey, img);
     }
 
@@ -99,14 +132,18 @@ class StreetView {
       const nextKey = `${nextLat.toFixed(4)},${nextLon.toFixed(4)}`;
       if (!this._cache.has(nextKey)) {
         this._cache.set(nextKey, undefined);
-        fetchMapillary(nextLat, nextLon, heading).then(ni => this._cache.set(nextKey, ni || null));
+        Promise.any([
+          fetchMapillary(nextLat, nextLon, heading),
+          fetchPanoramax(nextLat, nextLon, heading)
+        ]).then(ni => this._cache.set(nextKey, ni || null)).catch(() => this._cache.set(nextKey, null));
       }
     } else {
       this._noImageStreak++;
       if (this._noImageStreak >= 2) {
         if (this._wrapEl) this._wrapEl.style.background = 'transparent';
         this._imgEl.style.display = 'none';
-        this._showBadge('🗺 Satellite');
+        const hint = store.prefs.mapillary_token ? '🗺 Satellite' : '🗺 Satellite · aggiungi token Mapillary in Impostazioni';
+        this._showBadge(hint);
       }
     }
 
