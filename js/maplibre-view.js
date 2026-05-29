@@ -1,8 +1,10 @@
-// Vista satellite 2D: Esri World Imagery per road e trail — niente terrain 3D
+// Vista satellite 2D: Esri World Imagery per road e trail
 import debug from './debug.js';
 import store from './store.js';
 
-// Esri World Imagery — gratuito, no API key, copertura globale
+const BASE_ZOOM  = { road: 18, offroad: 16 };
+const BASE_PITCH = { road: 25, offroad: 40 };
+
 function buildSatStyle() {
   return {
     version: 8,
@@ -27,6 +29,30 @@ function routeToGeoJSON(points) {
   };
 }
 
+function createRunnerMarker(color) {
+  const el = document.createElement('div');
+  // ID filtro univoco per evitare conflitti tra istanze multiple
+  const fid = `rmf${Math.random().toString(36).slice(2)}`;
+  el.innerHTML = `<svg width="30" height="38" viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="${fid}" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="2.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- freccia direzionale (punta verso l'alto = direzione di marcia) -->
+    <polygon points="15,1 22,14 15,11 8,14"
+             fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round"
+             filter="url(#${fid})"/>
+    <!-- alone posizione -->
+    <circle cx="15" cy="27" r="12" fill="${color}" opacity="0.18"/>
+    <!-- cerchio principale -->
+    <circle cx="15" cy="27" r="8" fill="${color}" stroke="white" stroke-width="2.5"
+            filter="url(#${fid})"/>
+  </svg>`;
+  return el;
+}
+
 class MaplibreView {
   constructor() {
     this._map = null;
@@ -34,56 +60,44 @@ class MaplibreView {
     this._ready = false;
     this._pendingUpdate = null;
     this._mode = 'offroad';
+    this._zoomOffset = store.prefs.zoom_offset ?? 0;
   }
 
   async init(container, points, mode = 'offroad') {
     this._mode = mode;
+    this._zoomOffset = store.prefs.zoom_offset ?? 0;
     const style = buildSatStyle();
-
-    // Road: più vicino e meno inclinato (runner su strada)
-    // Trail: un po' più lontano e inclinato per vedere il terreno circostante
-    const zoom  = mode === 'road' ? 17 : 15;
-    const pitch = mode === 'road' ? 25 : 40;
-
+    const zoom  = BASE_ZOOM[mode]  + this._zoomOffset;
+    const pitch = BASE_PITCH[mode];
     const start = points[0];
 
     return new Promise((resolve, reject) => {
       try {
         this._map = new maplibregl.Map({
-          container,
-          style,
+          container, style,
           center: [start.lon, start.lat],
-          zoom,
-          pitch,
-          bearing: 0,
+          zoom, pitch, bearing: 0,
           antialias: true
         });
 
         this._map.on('load', () => {
-          // Traccia GPX
           this._map.addSource('route', { type: 'geojson', data: routeToGeoJSON(points) });
-
           const lineColor = mode === 'road' ? '#00b8ff' : '#00e5a0';
 
           this._map.addLayer({
-            id: 'route-glow',
-            type: 'line',
-            source: 'route',
+            id: 'route-glow', type: 'line', source: 'route',
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': lineColor, 'line-width': 10, 'line-opacity': 0.25 }
           });
           this._map.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: 'route',
+            id: 'route-line', type: 'line', source: 'route',
             layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: { 'line-color': lineColor, 'line-width': 4, 'line-opacity': 1 }
           });
 
-          // Marker posizione corrente
-          const el = document.createElement('div');
-          el.style.cssText = `width:18px;height:18px;background:${lineColor};border:3px solid white;border-radius:50%;box-shadow:0 0 0 4px ${lineColor}55,0 0 16px ${lineColor}99;`;
-          this._marker = new maplibregl.Marker({ element: el })
+          // Runner marker — SVG direzionale
+          const el = createRunnerMarker(lineColor);
+          this._marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
             .setLngLat([start.lon, start.lat])
             .addTo(this._map);
 
@@ -95,7 +109,7 @@ class MaplibreView {
             this.update(this._pendingUpdate);
             this._pendingUpdate = null;
           }
-          debug.log(`MapLibre satellite pronto — ${mode} / Esri`);
+          debug.log(`MapLibre pronto — ${mode} / zoom ${zoom}`);
           resolve();
         });
 
@@ -117,13 +131,21 @@ class MaplibreView {
     if (!this._ready) { this._pendingUpdate = { current_point, heading }; return; }
     this._map.easeTo({
       center: [current_point.lon, current_point.lat],
-      zoom: this._mode === 'road' ? 17 : 15,
+      zoom: BASE_ZOOM[this._mode] + this._zoomOffset,
       bearing: heading,
-      pitch: this._mode === 'road' ? 25 : 40,
+      pitch: BASE_PITCH[this._mode],
       duration: 400,
       easing: t => t * (2 - t)
     });
     this._marker.setLngLat([current_point.lon, current_point.lat]);
+  }
+
+  addZoom(delta) {
+    this._zoomOffset = Math.max(-4, Math.min(4, this._zoomOffset + delta));
+    store.setPref('zoom_offset', this._zoomOffset);
+    if (this._ready) {
+      this._map.easeTo({ zoom: BASE_ZOOM[this._mode] + this._zoomOffset, duration: 250 });
+    }
   }
 
   resize() { this._map?.resize(); }
