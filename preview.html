@@ -28,7 +28,7 @@
 <body>
 
 <div id="topbar" class="preview-topbar">
-  <a href="index.html" class="btn btn-secondary" style="padding:7px 12px;font-size:13px;flex-shrink:0">← Indietro</a>
+  <a href="app.html" class="btn btn-secondary" style="padding:7px 12px;font-size:13px;flex-shrink:0">← Indietro</a>
   <span id="route-name" class="route-name">Caricamento…</span>
   <div class="mode-toggle" id="mode-toggle" style="display:none">
     <button class="mode-toggle-btn" id="btn-mode-road" title="Modalità road: streetview">🏙 Road</button>
@@ -150,7 +150,7 @@ async function loadRoute() {
   }
 
   if (!routeObj) {
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
     return;
   }
 
@@ -175,7 +175,7 @@ async function loadRoute() {
     loading.classList.add('hidden');
     debug.error(err);
     alert('Errore caricamento percorso: ' + err.message);
-    window.location.href = 'index.html';
+    window.location.href = 'app.html';
   }
 }
 
