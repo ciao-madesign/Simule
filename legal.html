@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Note legali e Privacy</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo"><svg viewBox="0 0 36 26" width="28" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0"><path d="M6 14 Q2 9 5 4" stroke="#00e5a0" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="15" cy="17" rx="9" ry="5" fill="#00e5a0"/><circle cx="26" cy="11" r="5" fill="#00e5a0"/><ellipse cx="31" cy="12.5" rx="2.5" ry="2" fill="#00e5a0"/><path d="M23 7.5 L21 2 L24.5 2 L25.5 7.5Z" fill="#00e5a0"/><path d="M27 6.5 L26.5 1 L30.5 1 L29 6.5Z" fill="#00e5a0"/><line x1="21" y1="21" x2="26" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="21.5" x2="23" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="8" y1="21" x2="3" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="21.5" x2="6" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/></svg>SI<span>MULE</span></div>
+  <a href="index.html" class="btn btn-secondary" style="padding:7px 14px;font-size:13px">← Home</a>
+</header>
+
+<main class="legal-layout">
+
+  <h1 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;margin-bottom:6px">Note legali e Privacy</h1>
+  <p class="legal-updated">Ultimo aggiornamento: maggio 2025</p>
+
+  <nav class="legal-nav" aria-label="Sezioni">
+    <a href="#privacy">Privacy & GDPR</a>
+    <a href="#cookie">Cookie e localStorage</a>
+    <a href="#licenze">Licenze contenuti</a>
+    <a href="#servizi-terzi">Servizi terzi</a>
+    <a href="#avviso-privacy">Avviso dati GPX</a>
+    <a href="#disclaimer">Disclaimer</a>
+  </nav>
+
+  <!-- PRIVACY -->
+  <section class="legal-section" id="privacy">
+    <h2>Privacy e GDPR</h2>
+    <p>Simule è un'applicazione web statica che funziona interamente nel browser dell'utente. <strong>Non raccogliamo, non archiviamo e non trasmettiamo dati personali a server propri.</strong></p>
+
+    <h3>Dati trattati</h3>
+    <p>Simule non dispone di account utente, moduli di registrazione o sistemi di autenticazione. Non è presente alcun backend proprietario. I dati che l'applicazione gestisce sono:</p>
+    <ul>
+      <li><strong>File GPX / TCX / KML:</strong> elaborati esclusivamente in memoria nel browser (lato client). Non vengono mai trasmessi a server Simule.</li>
+      <li><strong>Preferenze utente</strong> (altezza, lunghezza del passo, impostazioni di simulazione): salvate in <code>localStorage</code> del browser, sul dispositivo dell'utente, senza sincronizzazione remota.</li>
+      <li><strong>Percorsi recenti</strong> e <strong>catalogo contributi utente</strong>: memorizzati in <code>localStorage</code>, accessibili solo dal browser locale.</li>
+    </ul>
+
+    <h3>Base giuridica</h3>
+    <p>Non essendo raccolti dati personali identificabili, non sussiste un trattamento ai sensi del Regolamento UE 2016/679 (GDPR) da parte del titolare del sito. L'utente controlla interamente i propri dati locali.</p>
+
+    <h3>Diritti dell'utente</h3>
+    <p>Poiché tutti i dati risiedono sul dispositivo dell'utente, l'utente può in qualsiasi momento:</p>
+    <ul>
+      <li>cancellare i dati di Simule svuotando il <em>localStorage</em> del browser (o usando il pulsante "Svuota percorsi recenti" nelle Impostazioni);</li>
+      <li>revocare l'accesso a sensori (Bluetooth, GPS) dalle impostazioni del browser/sistema operativo.</li>
+    </ul>
+
+    <h3>Contatto</h3>
+    <p>Per qualsiasi domanda: <a href="https://github.com/ciao-madesign/simule/issues" target="_blank" rel="noopener">github.com/ciao-madesign/simule/issues</a>.</p>
+  </section>
+
+  <!-- COOKIE -->
+  <section class="legal-section" id="cookie">
+    <h2>Cookie e localStorage</h2>
+    <p>Simule <strong>non usa cookie</strong> propri di nessun tipo (tecnici, analitici o di profilazione).</p>
+    <p>L'applicazione utilizza esclusivamente il <strong>localStorage</strong> del browser (API Web Storage) per mantenere le preferenze dell'utente tra una sessione e l'altra. Il localStorage è una memoria locale al dispositivo: nessun dato viene inviato a server e non è accessibile da altri siti.</p>
+    <p>I servizi di terze parti integrati (YouTube, Mapillary, ecc.) possono impostare propri cookie quando vengono attivati dall'utente. Si rimanda alle rispettive informative. Simule non ha controllo su tali cookie.</p>
+  </section>
+
+  <!-- LICENZE -->
+  <section class="legal-section" id="licenze">
+    <h2>Licenze dei contenuti</h2>
+
+    <h3>Codice sorgente</h3>
+    <p>Il codice sorgente di Simule è rilasciato sotto licenza <strong>MIT License</strong>. Il testo completo è disponibile nel file <code>LICENSE</code> del repository.</p>
+
+    <h3>Percorsi contribuiti dagli utenti</h3>
+    <p>I percorsi GPX e le descrizioni contribuiti dagli utenti tramite la pagina "Contribuisci" sono resi disponibili sotto la licenza scelta dal contributore al momento della pubblicazione:</p>
+    <ul>
+      <li><strong>Creative Commons Attribution 4.0 International (CC BY 4.0):</strong> il contenuto può essere liberamente usato, modificato e redistribuito purché venga attribuita la paternità all'autore originale. <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">Testo completo ↗</a></li>
+      <li><strong>Creative Commons Zero (CC0 1.0 — Dominio pubblico):</strong> l'autore rinuncia a tutti i diritti patrimoniali e morali nella misura consentita dalla legge. <a href="https://creativecommons.org/publicdomain/zero/1.0/" target="_blank" rel="noopener">Testo completo ↗</a></li>
+    </ul>
+    <p>Simule si riserva il diritto di non includere o di rimuovere dal catalogo pubblico qualsiasi contenuto che violi diritti di terzi o le presenti condizioni.</p>
+
+    <h3>Percorsi di esempio inclusi nel sito</h3>
+    <p>I tracciati GPX inclusi nella directory <code>data/sample-routes/</code> sono forniti come dati dimostrativi. La presenza di un nome geografico non costituisce rivendicazione di proprietà sul territorio.</p>
+  </section>
+
+  <!-- SERVIZI TERZI -->
+  <section class="legal-section" id="servizi-terzi">
+    <h2>Servizi di terze parti</h2>
+    <p>Simule integra i seguenti servizi esterni. Nessun dato personale identificabile viene trasmesso a tali servizi, ma il loro utilizzo è soggetto alle rispettive informative.</p>
+
+    <table class="service-table">
+      <thead>
+        <tr>
+          <th>Servizio</th>
+          <th>Utilizzo</th>
+          <th>Dati inviati</th>
+          <th>Informativa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Esri / ArcGIS</td>
+          <td>Tile mappa satellite (MapLibre GL)</td>
+          <td>Coordinate riquadri mappa visualizzati</td>
+          <td><a href="https://www.esri.com/en-us/privacy/overview" target="_blank" rel="noopener">Esri Privacy ↗</a></td>
+        </tr>
+        <tr>
+          <td>Mapillary</td>
+          <td>Foto street-level lungo il percorso</td>
+          <td>Coordinate geografiche dei punti richiesti</td>
+          <td><a href="https://www.mapillary.com/privacy" target="_blank" rel="noopener">Mapillary Privacy ↗</a></td>
+        </tr>
+        <tr>
+          <td>Panoramax</td>
+          <td>Foto street-level (fallback)</td>
+          <td>Coordinate geografiche dei punti richiesti</td>
+          <td><a href="https://panoramax.fr" target="_blank" rel="noopener">panoramax.fr ↗</a></td>
+        </tr>
+        <tr>
+          <td>YouTube / Google</td>
+          <td>Riproduzione video POV (se abbinato)</td>
+          <td>Nessuno da Simule — l'iframe YouTube ha proprie policy</td>
+          <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy ↗</a></td>
+        </tr>
+        <tr>
+          <td>Open-Elevation</td>
+          <td>Recupero quota per GPX senza dati altimetrici</td>
+          <td>Coordinate lat/lon dei punti GPX</td>
+          <td><a href="https://open-elevation.com" target="_blank" rel="noopener">open-elevation.com ↗</a></td>
+        </tr>
+        <tr>
+          <td>corsproxy.io</td>
+          <td>Proxy CORS per download file GPX da URL esterni</td>
+          <td>URL del file richiesto (solo se fetch diretto fallisce)</td>
+          <td><a href="https://corsproxy.io" target="_blank" rel="noopener">corsproxy.io ↗</a></td>
+        </tr>
+        <tr>
+          <td>GitHub</td>
+          <td>Repository codice e gestione proposte percorsi</td>
+          <td>Solo se l'utente apre una Issue</td>
+          <td><a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener">GitHub Privacy ↗</a></td>
+        </tr>
+        <tr>
+          <td>Google Fonts</td>
+          <td>Font Barlow e Barlow Condensed</td>
+          <td>Indirizzo IP al caricamento della pagina</td>
+          <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy ↗</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- AVVISO GPX -->
+  <section class="legal-section" id="avviso-privacy">
+    <h2>Avviso sui dati personali nei file GPX</h2>
+    <p>I file GPX registrati da smartwatch, GPS da polso o applicazioni di tracciamento (Garmin, Strava, Wahoo, ecc.) possono contenere dati personali, tra cui:</p>
+    <ul>
+      <li>il luogo di abitazione (punto di partenza/arrivo frequente);</li>
+      <li>luoghi di lavoro, palestre, scuole e altri punti di interesse personale;</li>
+      <li>orari abituali e pattern comportamentali deducibili dalla frequenza delle registrazioni;</li>
+      <li>dati biometrici (frequenza cardiaca, cadenza) se esportati con il tracciato.</li>
+    </ul>
+    <p><strong>Uso privato (caricamento personale):</strong> il file viene elaborato esclusivamente in memoria nel tuo browser e non lascia mai il tuo dispositivo. Simule non vede né conserva questi dati.</p>
+    <p><strong>Contribuzione al catalogo pubblico:</strong> prima di condividere un tracciato, ti raccomandiamo di:</p>
+    <ul>
+      <li>rimuovere i primi e ultimi punti che si avvicinano alla tua abitazione;</li>
+      <li>usare strumenti come <a href="https://www.gpsvisualizer.com" target="_blank" rel="noopener">GPS Visualizer</a> o la funzione "Privacy Zone" di Strava per oscurare i punti sensibili;</li>
+      <li>verificare l'assenza di dati biometrici nel file prima di caricarlo.</li>
+    </ul>
+    <p><strong>Simule non si assume alcuna responsabilità per i dati personali contenuti nei file GPX caricati o condivisi dagli utenti. La responsabilità della verifica e dell'anonimizzazione dei dati è esclusivamente dell'utente che contribuisce.</strong></p>
+  </section>
+
+  <!-- DISCLAIMER -->
+  <section class="legal-section" id="disclaimer">
+    <h2>Disclaimer</h2>
+    <p>Simule è un simulatore per uso ricreativo e di allenamento. <strong>Non è uno strumento di navigazione.</strong> Le informazioni fornite (percorsi, altimetria, pendenze, distanze) potrebbero contenere errori derivanti dalla qualità dei dati GPS originali o da interpolazioni automatiche.</p>
+    <p>L'utente utilizza Simule sotto la propria responsabilità. Simule non è responsabile per danni diretti o indiretti derivanti dall'utilizzo dell'applicazione, inclusi ma non limitati a infortuni, danni fisici, errori di pianificazione dell'allenamento o decisioni basate sui dati mostrati.</p>
+    <p>I percorsi presenti nel catalogo sono forniti dagli utenti e non verificati sul campo da Simule. La presenza di un percorso non costituisce endorsement della sua praticabilità o sicurezza.</p>
+    <p>Questa applicazione è fornita "così com'è" (as-is), senza garanzie di disponibilità continua o di accuratezza dei dati.</p>
+  </section>
+
+</main>
+
+</body>
+</html>

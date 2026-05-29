@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Contribuisci un percorso</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo"><svg viewBox="0 0 36 26" width="28" height="20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink:0"><path d="M6 14 Q2 9 5 4" stroke="#00e5a0" stroke-width="2.2" stroke-linecap="round"/><ellipse cx="15" cy="17" rx="9" ry="5" fill="#00e5a0"/><circle cx="26" cy="11" r="5" fill="#00e5a0"/><ellipse cx="31" cy="12.5" rx="2.5" ry="2" fill="#00e5a0"/><path d="M23 7.5 L21 2 L24.5 2 L25.5 7.5Z" fill="#00e5a0"/><path d="M27 6.5 L26.5 1 L30.5 1 L29 6.5Z" fill="#00e5a0"/><line x1="21" y1="21" x2="26" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="19" y1="21.5" x2="23" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="8" y1="21" x2="3" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/><line x1="10" y1="21.5" x2="6" y2="26" stroke="#00e5a0" stroke-width="2.5" stroke-linecap="round"/></svg>SI<span>MULE</span></div>
+  <a href="app.html" class="btn btn-secondary" style="padding:7px 14px;font-size:13px">← Home</a>
+</header>
+
+<main class="contribute-layout">
+
+  <h1 style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:32px;margin-bottom:8px">Contribuisci un percorso</h1>
+  <p style="color:var(--muted);font-size:15px;margin-bottom:24px">Aggiungi un tracciato al catalogo pubblico di Simule — visibile a tutti gli utenti.</p>
+
+  <div class="contribute-intro">
+    <strong>Come funziona:</strong> il percorso viene salvato prima nel tuo browser (localStorage). Puoi poi aprire una segnalazione su GitHub per proporlo nel catalogo ufficiale. L'inclusione è manuale e discrezionale.
+  </div>
+
+  <div id="contribute-form">
+
+    <!-- STEP 1: TRACCIATO -->
+    <div class="contribute-step">
+      <div class="step-header">
+        <div class="step-num">1</div>
+        <h2>Tracciato GPX</h2>
+      </div>
+
+      <div class="upload-box" style="max-width:100%">
+        <div class="upload-tabs" role="tablist">
+          <button class="utab active" data-tab="file" role="tab" aria-selected="true">📁 Da file</button>
+          <button class="utab" data-tab="url" role="tab" aria-selected="false">🔗 Da URL</button>
+        </div>
+        <div class="utab-pane" id="upane-file">
+          <label class="drop-zone" id="drop-zone" for="gpx-file-input" style="padding:32px 24px">
+            <span class="drop-zone-icon" style="font-size:36px">🗺</span>
+            <h2 style="font-size:16px">Carica tracciato</h2>
+            <p>Trascina o clicca · GPX, TCX, KML</p>
+            <input type="file" id="gpx-file-input" accept=".gpx,.tcx,.kml" aria-label="Carica file tracciato">
+          </label>
+        </div>
+        <div class="utab-pane" id="upane-url" style="display:none">
+          <div class="url-upload-wrap">
+            <div class="url-upload-icon">🔗</div>
+            <div class="url-upload-body">
+              <h2>Da URL pubblico</h2>
+              <p>File GPX, TCX o KML accessibile senza login</p>
+              <div class="url-row">
+                <input type="url" id="gpx-url-input" placeholder="https://…/percorso.gpx" autocomplete="off" spellcheck="false">
+                <button class="btn btn-primary" id="btn-load-url" style="white-space:nowrap">Carica</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gpx-loaded-info" style="display:none;margin-top:16px;padding:12px 16px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;font-size:13px;color:var(--accent)"></div>
+    </div>
+
+    <!-- STEP 2: METADATI -->
+    <div class="contribute-step">
+      <div class="step-header">
+        <div class="step-num">2</div>
+        <h2>Informazioni percorso</h2>
+      </div>
+
+      <div class="form-group">
+        <label for="c-name">Nome percorso <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="c-name" placeholder="es. Anello del Monte Rosa" maxlength="80">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label for="c-country">Paese <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="c-country" placeholder="es. Italia" maxlength="60">
+        </div>
+        <div class="form-group">
+          <label for="c-region">Regione / Stato <span style="color:var(--danger)">*</span></label>
+          <input type="text" id="c-region" placeholder="es. Piemonte" maxlength="60">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="c-city">Città / Area</label>
+        <input type="text" id="c-city" placeholder="es. Alagna Valsesia" maxlength="60">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label for="c-mode">Tipologia <span style="color:var(--danger)">*</span></label>
+          <select id="c-mode">
+            <option value="">— Scegli —</option>
+            <option value="road">🏙 Road / Asfalto</option>
+            <option value="offroad">🏔 Trail / Sterrato</option>
+            <option value="mixed">🌄 Misto</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="c-difficulty">Difficoltà <span style="color:var(--danger)">*</span></label>
+          <select id="c-difficulty">
+            <option value="">— Scegli —</option>
+            <option value="1">🟢 Facile</option>
+            <option value="2">🟡 Moderata</option>
+            <option value="3">🟠 Difficile</option>
+            <option value="4">🔴 Esperto</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="c-surface">Fondo stradale</label>
+        <select id="c-surface">
+          <option value="">— Opzionale —</option>
+          <option value="asphalt">Asfalto</option>
+          <option value="gravel">Ghiaia / Sterrato</option>
+          <option value="trail">Sentiero</option>
+          <option value="mixed">Misto</option>
+          <option value="sand">Sabbia</option>
+          <option value="snow">Neve / Alta quota</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Tag (seleziona tutti quelli applicabili)</label>
+        <div class="tags-grid" id="tags-grid">
+          <label class="tag-check"><input type="checkbox" value="panoramico"> Panoramico</label>
+          <label class="tag-check"><input type="checkbox" value="montagna"> Montagna</label>
+          <label class="tag-check"><input type="checkbox" value="mare"> Mare</label>
+          <label class="tag-check"><input type="checkbox" value="lago"> Lago</label>
+          <label class="tag-check"><input type="checkbox" value="storico"> Storico</label>
+          <label class="tag-check"><input type="checkbox" value="parco"> Parco / Natura</label>
+          <label class="tag-check"><input type="checkbox" value="urbano"> Urbano</label>
+          <label class="tag-check"><input type="checkbox" value="gara"> Percorso di gara</label>
+          <label class="tag-check"><input type="checkbox" value="anello"> Anello</label>
+          <label class="tag-check"><input type="checkbox" value="punto-punto"> Punto a punto</label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="c-desc">Descrizione <span style="color:var(--danger)">*</span></label>
+        <textarea id="c-desc" rows="3" placeholder="Descrivi brevemente il percorso: paesaggio, caratteristiche salienti, consigli…" maxlength="400" style="width:100%;resize:vertical;font-family:inherit;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;font-size:14px;line-height:1.5"></textarea>
+        <span class="form-hint"><span id="desc-count">0</span>/400 caratteri</span>
+      </div>
+    </div>
+
+    <!-- STEP 3: VIDEO (opzionale) -->
+    <div class="contribute-step">
+      <div class="step-header">
+        <div class="step-num">3</div>
+        <h2>Video POV (opzionale)</h2>
+      </div>
+
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Hai girato un video in POV del percorso? Aggiungilo per rendere la simulazione molto più immersiva. <strong style="color:var(--text)">Solo YouTube</strong> — nessun file video diretto.</p>
+
+      <div class="form-group">
+        <label for="c-video-url">URL YouTube</label>
+        <input type="url" id="c-video-url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+        <span class="form-hint">Deve essere pubblico o non in elenco. Incolla l'URL completo della pagina YouTube.</span>
+      </div>
+
+      <div class="form-group" id="video-speed-group" style="display:none">
+        <label for="c-video-speed">Velocità media del video <span style="color:var(--danger)">*</span></label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="number" id="c-video-speed" min="1" max="30" step="0.1" placeholder="es. 9.5" style="max-width:120px">
+          <span style="color:var(--muted)">km/h</span>
+        </div>
+        <span class="form-hint">Velocità media a cui è stato girato il video — usata per sincronizzare la riproduzione col passo del runner.</span>
+      </div>
+    </div>
+
+    <!-- STEP 4: LICENZA E CONSENSO -->
+    <div class="contribute-step">
+      <div class="step-header">
+        <div class="step-num">4</div>
+        <h2>Licenza e consenso</h2>
+      </div>
+
+      <div class="privacy-warning">
+        <strong>⚠ Attenzione — dati personali:</strong> Un file GPX può contenere dati sensibili come il percorso di casa, i luoghi che frequenti, gli orari abituali. Una volta pubblicato nel catalogo, il tracciato sarà visibile a chiunque visiti il sito. <strong>Simule non si assume alcuna responsabilità per i dati personali contenuti nei file condivisi.</strong> Assicurati di aver rimosso o anonimizzato i punti di partenza/arrivo se vicini alla tua abitazione.
+      </div>
+
+      <div class="form-group">
+        <label for="c-author">Autore (opzionale)</label>
+        <input type="text" id="c-author" placeholder="Il tuo nome o nickname" maxlength="60">
+        <span class="form-hint">Lascia vuoto per contribuire in modo anonimo.</span>
+      </div>
+
+      <div class="form-group">
+        <label>Licenza del contenuto</label>
+        <div class="radio-group" id="license-group">
+          <label class="radio-option selected" data-val="CC-BY-4.0">
+            <input type="radio" name="license" value="CC-BY-4.0" checked>CC BY 4.0 (Raccomandata)
+          </label>
+          <label class="radio-option" data-val="CC0">
+            <input type="radio" name="license" value="CC0">CC0 (Dominio pubblico)
+          </label>
+        </div>
+        <span class="form-hint">CC BY 4.0 permette l'uso libero con attribuzione. CC0 rinuncia a tutti i diritti. <a href="legal.html#licenze" target="_blank">Dettagli →</a></span>
+      </div>
+
+      <div class="consent-group">
+        <div class="consent-item">
+          <input type="checkbox" id="consent-rights">
+          <label for="consent-rights">Confermo di essere l'autore del tracciato (o di avere i diritti per condividerlo) e di accettare la licenza selezionata, che consente a Simule e a chiunque di usare liberamente questo contenuto.</label>
+        </div>
+        <div class="consent-item">
+          <input type="checkbox" id="consent-privacy">
+          <label for="consent-privacy">Ho letto l'<a href="legal.html#avviso-privacy" target="_blank">avviso sulla privacy</a>. Sono consapevole che il file GPX potrebbe contenere dati personali e che, una volta pubblicato, sarà visibile pubblicamente. Simule non è responsabile per tali dati.</label>
+        </div>
+      </div>
+
+      <div class="github-info">
+        📋 Dopo aver salvato, si aprirà una proposta pre-compilata su GitHub. Il percorso apparirà nel catalogo solo dopo revisione manuale.
+      </div>
+
+      <div style="margin-top:20px">
+        <button class="btn btn-primary btn-lg" id="btn-submit" style="width:100%">Salva e proponi percorso →</button>
+      </div>
+    </div>
+
+  </div><!-- /contribute-form -->
+
+  <!-- SUCCESS -->
+  <div class="contribute-success" id="contribute-success">
+    <div style="font-size:48px">✅</div>
+    <h2>Percorso salvato!</h2>
+    <p style="font-size:14px;color:var(--muted);max-width:400px;text-align:center">Il percorso è stato aggiunto al tuo catalogo locale. Per proporlo nel catalogo pubblico, apri la segnalazione su GitHub.</p>
+    <a id="github-issue-link" href="#" target="_blank" rel="noopener" class="btn btn-primary">Apri proposta su GitHub →</a>
+    <a href="app.html" class="btn btn-secondary">Torna alla home</a>
+  </div>
+
+</main>
+
+<div class="loading-overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Analisi percorso…</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { parseRouteText, loadRouteFromURL, computeRouteMeta } from './js/gpx-parser.js';
+import debug from './js/debug.js';
+
+let parsedPoints = null;
+let parsedMeta   = null;
+let parsedGpxText = null;
+
+// ---- Tabs ----
+document.querySelectorAll('.utab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.utab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.utab-pane').forEach(p => p.style.display = 'none');
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.getElementById(`upane-${btn.dataset.tab}`).style.display = '';
+  });
+});
+
+// ---- File ----
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('gpx-file-input');
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); fileInput.value = ''; });
+
+async function loadFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['gpx','tcx','kml'].includes(ext)) { showToast('Usa un file GPX, TCX o KML', 'error'); return; }
+  showLoading('Analisi tracciato…');
+  try {
+    const text = await file.text();
+    parsedGpxText = text;
+    parsedPoints = await parseRouteText(text);
+    parsedMeta = computeRouteMeta(parsedPoints, file.name);
+    const autoName = file.name.replace(/\.[^.]+$/, '');
+    if (!document.getElementById('c-name').value) document.getElementById('c-name').value = autoName;
+    showGpxInfo();
+  } catch (err) { showToast(err.message || 'Errore', 'error'); debug.error(err); }
+  finally { hideLoading(); }
+}
+
+// ---- URL ----
+document.getElementById('btn-load-url').addEventListener('click', loadFromUrl);
+document.getElementById('gpx-url-input').addEventListener('keydown', e => { if (e.key === 'Enter') loadFromUrl(); });
+
+async function loadFromUrl() {
+  const url = document.getElementById('gpx-url-input').value.trim();
+  if (!url) { showToast('Inserisci un URL valido', 'error'); return; }
+  showLoading('Download tracciato…');
+  try {
+    parsedPoints = await loadRouteFromURL(url);
+    parsedGpxText = null;
+    parsedMeta = computeRouteMeta(parsedPoints, 'route.gpx');
+    const fname = url.split('/').pop().split('?')[0].replace(/\.[^.]+$/, '') || 'Percorso da URL';
+    if (!document.getElementById('c-name').value) document.getElementById('c-name').value = fname;
+    showGpxInfo();
+  } catch (err) { showToast(err.message || 'Errore download', 'error'); debug.error(err); }
+  finally { hideLoading(); }
+}
+
+function showGpxInfo() {
+  const el = document.getElementById('gpx-loaded-info');
+  el.style.display = '';
+  el.innerHTML = `✅ Tracciato caricato: <strong>${parsedPoints.length} punti</strong> · <strong>${parsedMeta.distance_km.toFixed(2)} km</strong> · <strong>+${parsedMeta.elevation_gain}m</strong>`;
+}
+
+// ---- Tag checkboxes ----
+document.querySelectorAll('.tag-check').forEach(lbl => {
+  lbl.addEventListener('click', () => lbl.classList.toggle('checked'));
+});
+
+// ---- Desc counter ----
+document.getElementById('c-desc').addEventListener('input', function() {
+  document.getElementById('desc-count').textContent = this.value.length;
+});
+
+// ---- Video URL ----
+document.getElementById('c-video-url').addEventListener('input', function() {
+  const show = this.value.trim().length > 0;
+  document.getElementById('video-speed-group').style.display = show ? '' : 'none';
+});
+
+// ---- License radio ----
+document.querySelectorAll('#license-group .radio-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#license-group .radio-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input').checked = true;
+  });
+});
+
+// ---- Submit ----
+document.getElementById('btn-submit').addEventListener('click', submit);
+
+function submit() {
+  if (!parsedPoints) { showToast('Carica prima un tracciato GPX', 'error'); return; }
+
+  const name = document.getElementById('c-name').value.trim();
+  const country = document.getElementById('c-country').value.trim();
+  const region = document.getElementById('c-region').value.trim();
+  const mode = document.getElementById('c-mode').value;
+  const difficulty = parseInt(document.getElementById('c-difficulty').value);
+  const desc = document.getElementById('c-desc').value.trim();
+
+  if (!name) { showToast('Inserisci il nome del percorso', 'error'); return; }
+  if (!country || !region) { showToast('Inserisci paese e regione', 'error'); return; }
+  if (!mode) { showToast('Seleziona la tipologia del percorso', 'error'); return; }
+  if (!difficulty) { showToast('Seleziona la difficoltà', 'error'); return; }
+  if (!desc) { showToast('Aggiungi una descrizione', 'error'); return; }
+  if (!document.getElementById('consent-rights').checked) { showToast('Devi confermare i diritti sul contenuto', 'error'); return; }
+  if (!document.getElementById('consent-privacy').checked) { showToast('Devi accettare l\'avviso sulla privacy', 'error'); return; }
+
+  const city = document.getElementById('c-city').value.trim();
+  const surface = document.getElementById('c-surface').value;
+  const tags = Array.from(document.querySelectorAll('.tag-check.checked input')).map(i => i.value);
+  const author = document.getElementById('c-author').value.trim();
+  const license = document.querySelector('#license-group .radio-option.selected input').value;
+  const videoUrl = document.getElementById('c-video-url').value.trim();
+  const videoSpeed = parseFloat(document.getElementById('c-video-speed').value) || null;
+
+  let video = null;
+  if (videoUrl) {
+    const ytId = extractYouTubeId(videoUrl);
+    if (!ytId) { showToast('URL YouTube non valido', 'error'); return; }
+    if (videoUrl && !videoSpeed) { showToast('Inserisci la velocità media del video', 'error'); return; }
+    video = { type: 'youtube', id: ytId, avgSpeedMs: videoSpeed / 3.6, durationSeconds: null };
+  }
+
+  const entry = {
+    _user: true,
+    name, mode,
+    area_country: country, area_region: region, area_city: city,
+    difficulty, surface, tags, description: desc,
+    distance_km: parsedMeta.distance_km,
+    elevation_gain: parsedMeta.elevation_gain,
+    gpx_data: parsedGpxText,
+    author, license, video,
+    added_at: Date.now()
+  };
+
+  try {
+    const existing = JSON.parse(localStorage.getItem('simule_user_catalog') || '[]');
+    existing.unshift(entry);
+    localStorage.setItem('simule_user_catalog', JSON.stringify(existing));
+  } catch (e) {
+    showToast('Errore salvataggio locale', 'error'); return;
+  }
+
+  const issueUrl = buildGithubIssueUrl(entry);
+  document.getElementById('github-issue-link').href = issueUrl;
+  document.getElementById('contribute-form').style.display = 'none';
+  document.getElementById('contribute-success').classList.add('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function buildGithubIssueUrl(e) {
+  const diffLabel = { 1:'Facile', 2:'Moderata', 3:'Difficile', 4:'Esperto' };
+  const body = [
+    `**Nome:** ${e.name}`,
+    `**Area:** ${[e.area_city, e.area_region, e.area_country].filter(Boolean).join(', ')}`,
+    `**Tipo:** ${e.mode} | **Difficoltà:** ${diffLabel[e.difficulty] || e.difficulty}`,
+    `**Superficie:** ${e.surface || '—'}`,
+    `**Tag:** ${e.tags.join(', ') || '—'}`,
+    `**Distanza:** ${e.distance_km.toFixed(2)} km | **Dislivello:** +${e.elevation_gain}m`,
+    `**Descrizione:** ${e.description}`,
+    e.video ? `**Video YouTube:** https://youtube.com/watch?v=${e.video.id} (${(e.video.avgSpeedMs * 3.6).toFixed(1)} km/h)` : null,
+    `**Autore:** ${e.author || 'anonimo'}`,
+    `**Licenza:** ${e.license}`,
+    '',
+    '_Il file GPX è allegato al commento (incollalo sotto come testo o come file)._',
+    '',
+    '> Proposta generata automaticamente da Simule.'
+  ].filter(l => l !== null).join('\n');
+
+  return `https://github.com/ciao-madesign/simule/issues/new?title=${encodeURIComponent(`[Percorso] ${e.name}`)}&body=${encodeURIComponent(body)}&labels=percorso`;
+}
+
+// ---- Helpers ----
+function showLoading(msg) {
+  document.getElementById('loading').classList.remove('hidden');
+  document.getElementById('loading-msg').textContent = msg;
+}
+function hideLoading() { document.getElementById('loading').classList.add('hidden'); }
+
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>

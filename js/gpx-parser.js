@@ -97,6 +97,70 @@ export async function parseGPXString(text) {
   return _parse(text);
 }
 
+// ---- Multi-format support ----
+
+function rawPointsToGPX(raw) {
+  const trkpts = raw
+    .filter(p => !isNaN(p.lat) && !isNaN(p.lon))
+    .map(p => `<trkpt lat="${p.lat}" lon="${p.lon}">${p.ele != null && !isNaN(p.ele) ? `<ele>${p.ele}</ele>` : ''}</trkpt>`)
+    .join('');
+  return `<?xml version="1.0"?><gpx version="1.1"><trk><trkseg>${trkpts}</trkseg></trk></gpx>`;
+}
+
+function tcxToGPX(xmlStr) {
+  const doc = new DOMParser().parseFromString(xmlStr, 'text/xml');
+  const raw = Array.from(doc.querySelectorAll('Trackpoint')).map(tp => ({
+    lat: parseFloat(tp.querySelector('LatitudeDegrees')?.textContent),
+    lon: parseFloat(tp.querySelector('LongitudeDegrees')?.textContent),
+    ele: parseFloat(tp.querySelector('AltitudeMeters')?.textContent) || null
+  }));
+  if (!raw.filter(p => !isNaN(p.lat)).length) throw new Error('Nessun punto trovato nel file TCX');
+  return rawPointsToGPX(raw);
+}
+
+function kmlToGPX(xmlStr) {
+  const doc = new DOMParser().parseFromString(xmlStr, 'text/xml');
+  const raw = [];
+  doc.querySelectorAll('coordinates').forEach(el => {
+    el.textContent.trim().split(/\s+/).forEach(pt => {
+      const [lonS, latS, eleS] = pt.split(',');
+      const lat = parseFloat(latS), lon = parseFloat(lonS), ele = parseFloat(eleS);
+      if (!isNaN(lat) && !isNaN(lon)) raw.push({ lat, lon, ele: isNaN(ele) ? null : ele });
+    });
+  });
+  if (!raw.length) throw new Error('Nessun punto trovato nel file KML');
+  return rawPointsToGPX(raw);
+}
+
+export async function parseRouteText(text) {
+  let gpxStr;
+  if (text.includes('<TrainingCenterDatabase')) gpxStr = tcxToGPX(text);
+  else if (text.trimStart().startsWith('<kml') || text.includes('opengis.net/kml')) gpxStr = kmlToGPX(text);
+  else gpxStr = text;
+  return _parse(gpxStr);
+}
+
+export async function loadRouteFromURL(url) {
+  debug.log('Caricamento da URL:', url);
+  const tryFetch = async (fetchUrl) => {
+    const resp = await fetch(fetchUrl, { signal: AbortSignal.timeout(12000) });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.text();
+  };
+  let text;
+  try {
+    text = await tryFetch(url);
+  } catch (e) {
+    debug.log('Fetch diretto fallito —', e.message, '— provo corsproxy.io');
+    try {
+      text = await tryFetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    } catch {
+      throw new Error('Impossibile scaricare il file: errore CORS o rete. Scarica il file e caricalo direttamente.');
+    }
+  }
+  return parseRouteText(text);
+}
+
 async function _parse(text) {
   let doc;
   try {
