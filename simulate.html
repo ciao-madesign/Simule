@@ -212,13 +212,7 @@
       <button class="ctrl-btn play-pause" id="btn-play" title="Play/Pausa" aria-label="Play/Pausa">▶</button>
       <button class="ctrl-btn" id="btn-forward" title="+500m" aria-label="Avanti 500m">⏭</button>
 
-      <div style="display:flex;gap:4px">
-        <button class="multiplier-btn" data-mult="0.5">×0.5</button>
-        <button class="multiplier-btn active" data-mult="1">×1</button>
-        <button class="multiplier-btn" data-mult="1.5">×1.5</button>
-        <button class="multiplier-btn" data-mult="2">×2</button>
-        <button class="multiplier-btn" id="btn-waypoint-toggle" title="Foto waypoint on/off" style="margin-left:6px">📸</button>
-      </div>
+      <button class="multiplier-btn" id="btn-waypoint-toggle" title="Foto waypoint on/off">📸</button>
     </div>
   </div>
 </div>
@@ -774,13 +768,7 @@ function initControls() {
     }
   });
 
-  document.querySelectorAll('.multiplier-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      simulator.setMultiplier(parseFloat(btn.dataset.mult));
-      document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  });
+
 
   function makePaceBtn(btn, delta) {
     let pt = null, iv = null;

@@ -837,23 +837,15 @@ input:focus, select:focus {
   align-items: center;
   justify-content: center;
   height: 40px;
-  min-width: 48px;
-  padding: 0 12px;
+  min-width: 40px;
+  padding: 0 10px;
   border-radius: 100px;
   background: rgba(18,22,28,0.8);
   border: 1px solid var(--border);
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--muted);
-  transition: all 0.15s;
+  transition: opacity 0.2s;
   backdrop-filter: blur(8px);
-}
-
-.multiplier-btn.active {
-  color: var(--accent);
-  border-color: var(--accent);
-  background: rgba(0,229,160,0.12);
 }
 
 /* Pace controls (manual mode) */
