@@ -257,6 +257,7 @@ let totalElevGain = 0;
 let lastElevStrip = 0;
 let lfMap = null;
 let lfMarker = null;
+let currentSimDist = 0; // aggiornato da handleSimulatorUpdate, usato per risincronizzare il video
 
 // ---- Carica percorso ----
 async function init() {
@@ -374,6 +375,7 @@ function initVideoPlayer() {
   if (!videoMeta) return;
   if (videoMeta.type === 'youtube') {
     loadYouTubePlayer(videoMeta.id);
+    startVideoResyncLoop();
   } else if (videoMeta.type === 'mp4') {
     videoEl = document.getElementById('mp4-player');
     videoEl.src = videoMeta.url;
@@ -387,7 +389,10 @@ function loadYouTubePlayer(videoId) {
     ytPlayer = new YT.Player('yt-player-wrap', {
       videoId,
       playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0, iv_load_policy: 3 },
-      events: { onReady: e => e.target.setPlaybackRate(1) }
+      events: {
+        onReady: e => e.target.setPlaybackRate(1),
+        onStateChange: onYTStateChange
+      }
     });
   };
   if (window.YT?.Player) { doInit(); return; }
@@ -397,6 +402,57 @@ function loadYouTubePlayer(videoId) {
   document.head.appendChild(tag);
 }
 
+function onYTStateChange(e) {
+  const badge = document.getElementById('video-sync-badge');
+  // State 3 = buffering (possibile inizio pubblicità o rebuffer di rete)
+  if (e.data === 3) {
+    if (badge) badge.textContent = '⏸ Caricamento…';
+    return;
+  }
+  // State 1 = playing: se arriviamo dallo stato buffering/pausa, risincronizzare
+  if (e.data === 1) {
+    // Piccolo delay per lasciar stabilizzare il player dopo la pubblicità
+    setTimeout(() => resyncVideoToRoute(true), 400);
+  }
+}
+
+// Risincronizza la posizione del video alla posizione attuale del runner.
+// forceSeek=true salta sempre se il drift è oltre soglia;
+// forceSeek=false (controllo periodico) usa soglia più alta per non disturbare la visione normale.
+function resyncVideoToRoute(forceSeek = false) {
+  if (!ytPlayer || !videoMeta?.durationSeconds) return;
+  const routeLen = route[route.length - 1].dist_from_start;
+  const expectedTime = (currentSimDist / routeLen) * videoMeta.durationSeconds;
+  let actualTime;
+  try { actualTime = ytPlayer.getCurrentTime(); } catch { return; }
+
+  const drift = Math.abs(actualTime - expectedTime);
+  // Dopo un'interruzione pubblicitaria forziamo la risincronizzazione con soglia bassa (5s);
+  // nel controllo periodico usiamo 20s per non interrompere la visione se il runner
+  // ha cambiato passo di poco.
+  const threshold = forceSeek ? 5 : 20;
+  if (drift > threshold) {
+    try { ytPlayer.seekTo(expectedTime, true); } catch {}
+    debug.log(`Video risincronizzato: drift=${drift.toFixed(1)}s → seekTo ${expectedTime.toFixed(1)}s`);
+  }
+
+  const badge = document.getElementById('video-sync-badge');
+  if (badge && ytPlayer.getPlayerState?.() === 1) {
+    const rate = snapYTRate(Math.max(0.25, Math.min(2,
+      videoMeta.avgSpeedMs > 0 ? (currentSimDist > 0 ? 1 : 1) : 1)));
+    badge.textContent = `▶ ×${rate.toFixed(2)}`;
+  }
+}
+
+// Controllo periodico ogni 10 s: rete di sicurezza contro drift accumulato
+function startVideoResyncLoop() {
+  setInterval(() => {
+    if (videoMeta?.type === 'youtube' && ytPlayer?.getPlayerState?.() === 1) {
+      resyncVideoToRoute(false);
+    }
+  }, 10000);
+}
+
 const YT_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
 function snapYTRate(rate) {
   return YT_RATES.reduce((a, b) => Math.abs(b - rate) < Math.abs(a - rate) ? b : a);
@@ -404,17 +460,21 @@ function snapYTRate(rate) {
 
 function syncVideo(speedMs, currentDist) {
   if (!videoMeta || !videoMeta.avgSpeedMs) return;
+  currentSimDist = currentDist; // aggiorna per uso in resyncVideoToRoute
   const rate = Math.max(0.25, Math.min(2, speedMs / videoMeta.avgSpeedMs));
   const badge = document.getElementById('video-sync-badge');
 
   if (videoMeta.type === 'youtube' && ytPlayer?.setPlaybackRate) {
     const snapped = snapYTRate(rate);
     try { ytPlayer.setPlaybackRate(snapped); } catch {}
-    if (badge) badge.textContent = `▶ ×${snapped.toFixed(2)}`;
+    // Aggiorna badge solo se non mostra stato di caricamento/pubblicità
+    if (badge && !badge.textContent.startsWith('⏸')) {
+      badge.textContent = `▶ ×${snapped.toFixed(2)}`;
+    }
   } else if (videoEl) {
     videoEl.playbackRate = rate;
     if (badge) badge.textContent = `▶ ×${rate.toFixed(2)}`;
-    // Sync posizione video su seek (tolleranza 3s)
+    // Risincronizza posizione MP4 su seek (tolleranza 3s)
     if (videoMeta.durationSeconds > 0) {
       const targetTime = (currentDist / route[route.length-1].dist_from_start) * videoMeta.durationSeconds;
       if (Math.abs(videoEl.currentTime - targetTime) > 3) videoEl.currentTime = targetTime;
@@ -558,6 +618,9 @@ function handleSimulatorUpdate(state) {
     renderElevationStrip(current_dist);
     lastElevStrip = current_dist;
   }
+
+  // Traccia posizione corrente (usata da resyncVideoToRoute anche quando speed=0)
+  currentSimDist = current_dist;
 
   // Vista principale
   if (videoMeta && speed_ms > 0) {
