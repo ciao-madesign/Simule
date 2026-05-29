@@ -266,41 +266,15 @@ function escHtml(s) {
 // ---- Catalogo ----
 const DIFF_LABEL = { 1:'🟢 Facile', 2:'🟡 Moderata', 3:'🟠 Difficile', 4:'🔴 Esperto' };
 
-const CATALOG = [
-  {
-    name: 'Roma – Appia Antica',
-    path: 'data/sample-routes/road-roma.gpx',
-    mode: 'road',
-    area_country: 'Italia', area_region: 'Lazio', area_city: 'Roma',
-    difficulty: 1, surface: 'mixed',
-    distance_km: 7.5, elevation_gain: 80,
-    tags: ['storico','parco','urbano'],
-    description: 'Un classico anello storico tra basoli romani e pini marittimi.',
-    video: null
-  },
-  {
-    name: 'Trail Dolomiti',
-    path: 'data/sample-routes/trail-dolomiti.gpx',
-    mode: 'offroad',
-    area_country: 'Italia', area_region: 'Trentino-Alto Adige', area_city: 'Cortina',
-    difficulty: 3, surface: 'trail',
-    distance_km: 18, elevation_gain: 1200,
-    tags: ['montagna','panoramico'],
-    description: 'Alta quota tra le pale dolomitiche, con dislivello mozzafiato.',
-    video: null
-  },
-  {
-    name: 'Cinque Terre Coastal Trail',
-    path: 'data/sample-routes/misto-cinque-terre.gpx',
-    mode: 'mixed',
-    area_country: 'Italia', area_region: 'Liguria', area_city: 'La Spezia',
-    difficulty: 2, surface: 'mixed',
-    distance_km: 12, elevation_gain: 600,
-    tags: ['mare','panoramico','sentiero'],
-    description: 'Sentiero panoramico sul mare con vista sui borghi colorati.',
-    video: { type: 'youtube', id: 'dQw4w9WgXcQ', avgSpeedMs: 2.5, durationSeconds: 3600 }
-  }
-];
+let _catalogCache = null;
+async function fetchCatalog() {
+  if (_catalogCache) return _catalogCache;
+  try {
+    const resp = await fetch('data/catalog.json');
+    _catalogCache = resp.ok ? await resp.json() : [];
+  } catch { _catalogCache = []; }
+  return _catalogCache;
+}
 
 // ---- Filtri catalogo ----
 const activeFilters = { mode: '', diff: '', search: '' };
@@ -320,8 +294,9 @@ document.getElementById('catalog-search').addEventListener('input', e => {
   applyFilters();
 });
 
-function applyFilters() {
-  const allEntries = [...CATALOG, ...loadUserCatalog()];
+async function applyFilters() {
+  const catalog = await fetchCatalog();
+  const allEntries = [...catalog, ...loadUserCatalog()];
   const filtered = allEntries.filter(entry => {
     if (activeFilters.mode && entry.mode !== activeFilters.mode) return false;
     if (activeFilters.diff && entry.difficulty !== parseInt(activeFilters.diff)) return false;
@@ -396,7 +371,8 @@ async function loadCatalogEntry(entry) {
       points = await loadRouteFromURL(entry.gpx_url);
       text = null;
     } else {
-      const resp = await fetch(entry.path);
+      const gpxPath = entry.gpx_path || entry.path;
+      const resp = await fetch(gpxPath);
       if (!resp.ok) throw new Error('File non trovato');
       text = await resp.text();
       points = await parseGPXString(text);

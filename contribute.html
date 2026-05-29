@@ -215,11 +215,11 @@
       </div>
 
       <div class="github-info">
-        📋 Dopo aver salvato, si aprirà una proposta pre-compilata su GitHub. Il percorso apparirà nel catalogo solo dopo revisione manuale.
+        📧 Dopo aver salvato riceverai le istruzioni per inviare il percorso via email — nessun account necessario.
       </div>
 
       <div style="margin-top:20px">
-        <button class="btn btn-primary btn-lg" id="btn-submit" style="width:100%">Salva e proponi percorso →</button>
+        <button class="btn btn-primary btn-lg" id="btn-submit" style="width:100%">Salva e invia percorso →</button>
       </div>
     </div>
 
@@ -228,44 +228,63 @@
   <!-- SUCCESS: step 1 done, step 2 pending -->
   <div class="contribute-success" id="contribute-success">
 
-    <!-- Step completati -->
     <div style="width:100%;max-width:520px">
+
+      <!-- Step 1: salvato -->
       <div class="submit-step submit-step-done">
         <div class="submit-step-icon">✅</div>
         <div class="submit-step-body">
-          <strong>Salvato nel catalogo locale</strong>
-          <span>Il percorso è visibile in "Catalogo" su questo dispositivo.</span>
+          <strong>Dati salvati</strong>
+          <span>Il percorso è visibile nel catalogo su questo dispositivo.</span>
         </div>
       </div>
 
-      <div class="submit-step submit-step-pending" id="step-github-pending">
+      <!-- Step 2: scarica GPX -->
+      <div class="submit-step submit-step-pending" id="step-download-pending">
         <div class="submit-step-icon">⏳</div>
         <div class="submit-step-body">
-          <strong>Apri la proposta su GitHub</strong>
-          <span>Per comparire nel catalogo pubblico devi aprire la segnalazione — è pre-compilata, ci vogliono 10 secondi.</span>
+          <strong>Scarica il file GPX</strong>
+          <span>Dovrai allegarlo all'email nel passo successivo.</span>
         </div>
       </div>
-
-      <div class="submit-step submit-step-done" id="step-github-done" style="display:none">
+      <div class="submit-step submit-step-done" id="step-download-done" style="display:none">
         <div class="submit-step-icon">✅</div>
         <div class="submit-step-body">
-          <strong>Proposta inviata su GitHub</strong>
-          <span>Grazie! Riceverai un aggiornamento sulla issue quando il percorso viene revisionato.</span>
+          <strong>File GPX scaricato</strong>
+          <span>Tienilo a portata di mano per allegarlo all'email.</span>
         </div>
       </div>
+
+      <!-- Step 3: invia email -->
+      <div class="submit-step submit-step-pending" id="step-email-pending" style="opacity:0.45">
+        <div class="submit-step-icon">⏳</div>
+        <div class="submit-step-body">
+          <strong>Invia l'email con il GPX allegato</strong>
+          <span>L'email è già compilata con tutti i dati del percorso.</span>
+        </div>
+      </div>
+      <div class="submit-step submit-step-done" id="step-email-done" style="display:none">
+        <div class="submit-step-icon">✅</div>
+        <div class="submit-step-body">
+          <strong>Email inviata</strong>
+          <span>Grazie! Aggiungeremo il percorso al catalogo il prima possibile.</span>
+        </div>
+      </div>
+
     </div>
 
-    <!-- CTA GitHub (visibile finché non confermano) -->
-    <div id="github-cta-block" style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px">
-      <a id="github-issue-link" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="width:100%;justify-content:center" id="btn-open-github">
-        Apri proposta su GitHub →
+    <!-- Azioni (visibili finché non confermano) -->
+    <div id="submit-actions" style="width:100%;max-width:520px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-secondary" id="btn-download-gpx" style="width:100%">⬇ Scarica file GPX</button>
+      <a id="mailto-link" href="#" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;pointer-events:none;opacity:0.4" id="btn-open-mail">
+        📧 Apri email precompilata →
       </a>
-      <button class="btn btn-secondary" id="btn-confirm-github" style="width:100%">Ho inviato la segnalazione ✓</button>
+      <button class="btn btn-secondary" id="btn-confirm-email" style="width:100%;display:none">Ho inviato l'email ✓</button>
     </div>
 
-    <!-- Stato finale dopo conferma -->
-    <div id="github-confirmed-block" style="display:none;width:100%;max-width:520px;text-align:center">
-      <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Perfetto! Torna a Simule e inizia a correre.</p>
+    <!-- Stato finale -->
+    <div id="submit-done-block" style="display:none;width:100%;max-width:520px;text-align:center">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:16px">Perfetto — ci vorrà qualche giorno per la revisione. Nel frattempo puoi già correre su tutti i percorsi disponibili.</p>
       <a href="app.html" class="btn btn-primary" style="width:100%;justify-content:center">Torna alla home</a>
     </div>
 
@@ -430,18 +449,43 @@ function submit() {
     showToast('Errore salvataggio locale', 'error'); return;
   }
 
-  const issueUrl = buildGithubIssueUrl(entry);
-  document.getElementById('github-issue-link').href = issueUrl;
+  // Build mailto and wire up success screen
+  const mailtoHref = buildMailtoUrl(entry);
+  const gpxFilename = (name.replace(/[^a-z0-9]/gi, '-').toLowerCase() || 'percorso') + '.gpx';
+
   document.getElementById('contribute-form').style.display = 'none';
   document.getElementById('contribute-success').classList.add('show');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  // "Ho inviato" confirm button
-  document.getElementById('btn-confirm-github').addEventListener('click', () => {
-    document.getElementById('step-github-pending').style.display = 'none';
-    document.getElementById('step-github-done').style.display = '';
-    document.getElementById('github-cta-block').style.display = 'none';
-    document.getElementById('github-confirmed-block').style.display = '';
+  // Step 2: download GPX
+  const btnDownload = document.getElementById('btn-download-gpx');
+  const mailtoAnchor = document.getElementById('mailto-link');
+
+  btnDownload.addEventListener('click', () => {
+    const blob = new Blob([parsedGpxText || ''], { type: 'application/gpx+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = gpxFilename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    // Unlock email button
+    document.getElementById('step-download-pending').style.display = 'none';
+    document.getElementById('step-download-done').style.display = '';
+    document.getElementById('step-email-pending').style.opacity = '1';
+    mailtoAnchor.style.pointerEvents = '';
+    mailtoAnchor.style.opacity = '1';
+    document.getElementById('btn-confirm-email').style.display = '';
+    btnDownload.style.display = 'none';
+  });
+
+  mailtoAnchor.href = mailtoHref;
+
+  // Step 3: confirm email sent
+  document.getElementById('btn-confirm-email').addEventListener('click', () => {
+    document.getElementById('step-email-pending').style.display = 'none';
+    document.getElementById('step-email-done').style.display = '';
+    document.getElementById('submit-actions').style.display = 'none';
+    document.getElementById('submit-done-block').style.display = '';
   });
 }
 
@@ -450,26 +494,36 @@ function extractYouTubeId(url) {
   return m ? m[1] : null;
 }
 
-function buildGithubIssueUrl(e) {
+function buildMailtoUrl(e) {
   const diffLabel = { 1:'Facile', 2:'Moderata', 3:'Difficile', 4:'Esperto' };
+  const subject = `[Simule] Nuovo percorso: ${e.name}`;
   const body = [
-    `**Nome:** ${e.name}`,
-    `**Area:** ${[e.area_city, e.area_region, e.area_country].filter(Boolean).join(', ')}`,
-    `**Tipo:** ${e.mode} | **Difficoltà:** ${diffLabel[e.difficulty] || e.difficulty}`,
-    `**Superficie:** ${e.surface || '—'}`,
-    `**Tag:** ${e.tags.join(', ') || '—'}`,
-    `**Distanza:** ${e.distance_km.toFixed(2)} km | **Dislivello:** +${e.elevation_gain}m`,
-    `**Descrizione:** ${e.description}`,
-    e.video ? `**Video YouTube:** https://youtube.com/watch?v=${e.video.id} (${(e.video.avgSpeedMs * 3.6).toFixed(1)} km/h)` : null,
-    `**Autore:** ${e.author || 'anonimo'}`,
-    `**Licenza:** ${e.license}`,
-    '',
-    '_Il file GPX è allegato al commento (incollalo sotto come testo o come file)._',
-    '',
-    '> Proposta generata automaticamente da Simule.'
+    `Ciao,`,
+    ``,
+    `Propongo l'aggiunta di questo percorso al catalogo di Simule.`,
+    ``,
+    `--- DATI PERCORSO ---`,
+    `Nome: ${e.name}`,
+    `Area: ${[e.area_city, e.area_region, e.area_country].filter(Boolean).join(', ')}`,
+    `Tipo: ${e.mode}`,
+    `Difficoltà: ${diffLabel[e.difficulty] || e.difficulty}`,
+    `Superficie: ${e.surface || '—'}`,
+    `Tag: ${(e.tags || []).join(', ') || '—'}`,
+    `Distanza: ${e.distance_km.toFixed(2)} km`,
+    `Dislivello: +${e.elevation_gain}m`,
+    `Descrizione: ${e.description}`,
+    e.video ? `Video YouTube: https://youtube.com/watch?v=${e.video.id} (${(e.video.avgSpeedMs * 3.6).toFixed(1)} km/h)` : null,
+    `Autore: ${e.author || 'anonimo'}`,
+    `Licenza: ${e.license}`,
+    ``,
+    `In allegato il file GPX del tracciato.`,
+    ``,
+    `--- FINE DATI ---`,
+    ``,
+    `Generato da simule-run.vercel.app`
   ].filter(l => l !== null).join('\n');
 
-  return `https://github.com/ciao-madesign/simule/issues/new?title=${encodeURIComponent(`[Percorso] ${e.name}`)}&body=${encodeURIComponent(body)}&labels=percorso`;
+  return `mailto:ciao.madesign@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // ---- Helpers ----
