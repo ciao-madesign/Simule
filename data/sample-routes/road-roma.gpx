@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Simule Sample" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Roma – Appia Antica</name>
+    <desc>Percorso stradale lungo la Via Appia Antica, Roma</desc>
+  </metadata>
+  <trk>
+    <name>Roma – Appia Antica</name>
+    <trkseg>
+      <trkpt lat="41.8520" lon="12.5139"><ele>32</ele></trkpt>
+      <trkpt lat="41.8510" lon="12.5145"><ele>33</ele></trkpt>
+      <trkpt lat="41.8499" lon="12.5152"><ele>34</ele></trkpt>
+      <trkpt lat="41.8488" lon="12.5158"><ele>36</ele></trkpt>
+      <trkpt lat="41.8477" lon="12.5165"><ele>38</ele></trkpt>
+      <trkpt lat="41.8465" lon="12.5172"><ele>40</ele></trkpt>
+      <trkpt lat="41.8454" lon="12.5178"><ele>42</ele></trkpt>
+      <trkpt lat="41.8443" lon="12.5185"><ele>44</ele></trkpt>
+      <trkpt lat="41.8431" lon="12.5191"><ele>46</ele></trkpt>
+      <trkpt lat="41.8420" lon="12.5198"><ele>48</ele></trkpt>
+      <trkpt lat="41.8408" lon="12.5204"><ele>50</ele></trkpt>
+      <trkpt lat="41.8397" lon="12.5211"><ele>52</ele></trkpt>
+      <trkpt lat="41.8385" lon="12.5217"><ele>54</ele></trkpt>
+      <trkpt lat="41.8374" lon="12.5224"><ele>56</ele></trkpt>
+      <trkpt lat="41.8362" lon="12.5230"><ele>58</ele></trkpt>
+      <trkpt lat="41.8351" lon="12.5237"><ele>60</ele></trkpt>
+      <trkpt lat="41.8339" lon="12.5243"><ele>62</ele></trkpt>
+      <trkpt lat="41.8328" lon="12.5250"><ele>64</ele></trkpt>
+      <trkpt lat="41.8316" lon="12.5256"><ele>66</ele></trkpt>
+      <trkpt lat="41.8305" lon="12.5263"><ele>68</ele></trkpt>
+      <trkpt lat="41.8293" lon="12.5269"><ele>70</ele></trkpt>
+      <trkpt lat="41.8282" lon="12.5276"><ele>68</ele></trkpt>
+      <trkpt lat="41.8270" lon="12.5282"><ele>66</ele></trkpt>
+      <trkpt lat="41.8259" lon="12.5289"><ele>64</ele></trkpt>
+      <trkpt lat="41.8247" lon="12.5295"><ele>62</ele></trkpt>
+      <trkpt lat="41.8236" lon="12.5302"><ele>60</ele></trkpt>
+      <trkpt lat="41.8224" lon="12.5308"><ele>58</ele></trkpt>
+      <trkpt lat="41.8213" lon="12.5315"><ele>56</ele></trkpt>
+      <trkpt lat="41.8201" lon="12.5321"><ele>54</ele></trkpt>
+      <trkpt lat="41.8190" lon="12.5328"><ele>52</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

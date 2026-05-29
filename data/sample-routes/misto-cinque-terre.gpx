@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Simule Sample" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Cinque Terre – Sentiero Azzurro</name>
+    <desc>Percorso misto costa/sentiero tra Riomaggiore e Monterosso</desc>
+  </metadata>
+  <trk>
+    <name>Cinque Terre – Sentiero Azzurro</name>
+    <trkseg>
+      <trkpt lat="44.0990" lon="9.7370"><ele>20</ele></trkpt>
+      <trkpt lat="44.1001" lon="9.7352"><ele>35</ele></trkpt>
+      <trkpt lat="44.1014" lon="9.7334"><ele>60</ele></trkpt>
+      <trkpt lat="44.1028" lon="9.7316"><ele>90</ele></trkpt>
+      <trkpt lat="44.1042" lon="9.7298"><ele>125</ele></trkpt>
+      <trkpt lat="44.1056" lon="9.7280"><ele>155</ele></trkpt>
+      <trkpt lat="44.1070" lon="9.7262"><ele>180</ele></trkpt>
+      <trkpt lat="44.1084" lon="9.7244"><ele>195</ele></trkpt>
+      <trkpt lat="44.1098" lon="9.7226"><ele>205</ele></trkpt>
+      <trkpt lat="44.1112" lon="9.7208"><ele>210</ele></trkpt>
+      <trkpt lat="44.1126" lon="9.7190"><ele>200</ele></trkpt>
+      <trkpt lat="44.1140" lon="9.7172"><ele>185</ele></trkpt>
+      <trkpt lat="44.1154" lon="9.7154"><ele>165</ele></trkpt>
+      <trkpt lat="44.1168" lon="9.7136"><ele>140</ele></trkpt>
+      <trkpt lat="44.1182" lon="9.7118"><ele>110</ele></trkpt>
+      <trkpt lat="44.1196" lon="9.7100"><ele>80</ele></trkpt>
+      <trkpt lat="44.1210" lon="9.7082"><ele>50</ele></trkpt>
+      <trkpt lat="44.1224" lon="9.7064"><ele>30</ele></trkpt>
+      <trkpt lat="44.1238" lon="9.7046"><ele>15</ele></trkpt>
+      <trkpt lat="44.1252" lon="9.7028"><ele>10</ele></trkpt>
+      <trkpt lat="44.1266" lon="9.7010"><ele>12</ele></trkpt>
+      <trkpt lat="44.1280" lon="9.6992"><ele>18</ele></trkpt>
+      <trkpt lat="44.1294" lon="9.6974"><ele>30</ele></trkpt>
+      <trkpt lat="44.1308" lon="9.6956"><ele>50</ele></trkpt>
+      <trkpt lat="44.1322" lon="9.6938"><ele>75</ele></trkpt>
+      <trkpt lat="44.1336" lon="9.6920"><ele>105</ele></trkpt>
+      <trkpt lat="44.1350" lon="9.6902"><ele>130</ele></trkpt>
+      <trkpt lat="44.1364" lon="9.6884"><ele>150</ele></trkpt>
+      <trkpt lat="44.1378" lon="9.6866"><ele>160</ele></trkpt>
+      <trkpt lat="44.1392" lon="9.6848"><ele>165</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

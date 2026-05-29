@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Simulazione</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+  <style>
+    body { overflow: hidden; }
+
+    /* Vista secondaria nascosta */
+    #fallback-map-container { position:absolute; inset:0; display:none; }
+    #fallback-map-container.visible { display:block; }
+
+    /* Street view */
+    #street-view-wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    #street-view-img { width:100%; height:100%; object-fit:cover; transition:opacity 0.3s; }
+    #no-image-msg { position:absolute; text-align:center; color:var(--muted); }
+    #no-image-msg.hidden { display:none; }
+
+    /* MapLibre / Leaflet fallback */
+    #maplibre-container { position:absolute; inset:0; }
+    #leaflet-fallback { position:absolute; inset:0; display:none; }
+    #leaflet-fallback.visible { display:block; }
+
+    /* Grade color classes */
+    .grade-down { color: var(--down); }
+    .grade-flat { color: var(--accent); }
+    .grade-mid { color: var(--warn); }
+    .grade-high { color: var(--danger); }
+
+    /* Pace input overlay */
+    #pace-input-overlay {
+      position:fixed; inset:0; background:rgba(10,12,15,0.85);
+      display:flex; align-items:center; justify-content:center;
+      z-index:100; backdrop-filter:blur(8px);
+    }
+    #pace-input-overlay.hidden { display:none; }
+    .pace-input-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-lg); padding:32px; min-width:280px;
+      text-align:center;
+    }
+    .pace-input-card h2 {
+      font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px;
+      margin-bottom:20px;
+    }
+    .pace-dial {
+      display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:24px;
+    }
+    .pace-dial-value {
+      font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:56px;
+      color:var(--text); min-width:140px;
+    }
+    .pace-dial-btn {
+      width:48px; height:48px; border-radius:50%;
+      background:var(--surface2); border:1px solid var(--border);
+      font-size:22px; color:var(--text);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; user-select:none;
+    }
+    .pace-dial-btn:active { background:var(--border); }
+
+    .speed-slider-wrap { margin-bottom:24px; }
+    .speed-slider-wrap input[type=range] { width:100%; accent-color:var(--accent); }
+    .speed-label { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:28px; margin-top:8px; }
+
+    /* Sensor connect overlay */
+    #sensor-overlay {
+      position:fixed; inset:0; background:rgba(10,12,15,0.9);
+      display:flex; align-items:center; justify-content:center;
+      z-index:200; backdrop-filter:blur(8px);
+    }
+    #sensor-overlay.hidden { display:none; }
+    .sensor-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-lg); padding:32px; min-width:300px; max-width:400px;
+      text-align:center;
+    }
+    .sensor-card h2 { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; margin-bottom:8px; }
+    .sensor-card p { color:var(--muted); font-size:14px; margin-bottom:24px; }
+    .sensor-status { font-size:13px; color:var(--muted); margin-top:12px; min-height:18px; }
+  </style>
+</head>
+<body>
+
+<!-- Vista principale -->
+<div class="simulate-layout">
+  <div id="view-container">
+    <!-- Street view -->
+    <div id="street-view-wrap">
+      <img id="street-view-img" src="" alt="Street view" style="display:none">
+      <div id="no-image-msg">
+        <div style="font-size:48px;margin-bottom:12px">🗺</div>
+        <div>Nessuna immagine disponibile</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Visualizzazione mappa attiva</div>
+      </div>
+    </div>
+
+    <!-- Mappa 3D/2D -->
+    <div id="fallback-map-container">
+      <div id="maplibre-container"></div>
+      <div id="leaflet-fallback"></div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div class="hud" id="hud">
+    <!-- Topbar -->
+    <div class="hud-topbar">
+      <div class="hud-logo">SIMULE</div>
+      <div class="hud-route-info">
+        <div class="hud-route-name" id="hud-route-name">—</div>
+        <div class="hud-route-mode" id="hud-route-mode">—</div>
+      </div>
+    </div>
+
+    <!-- Pendenza -->
+    <div class="hud-grade" id="hud-grade-wrap">
+      <div class="grade-value grade-flat" id="hud-grade">+0.0%</div>
+      <div class="grade-label">Pendenza</div>
+    </div>
+
+    <!-- Lookahead alert -->
+    <div class="hud-lookahead" id="hud-lookahead">⚠ +0% tra 0m</div>
+
+    <!-- Stats laterali -->
+    <div class="hud-stats">
+      <div class="hud-stat">
+        <span class="hud-stat-label">Percorsi</span>
+        <span class="hud-stat-value" id="stat-done">0.00 <span class="unit">km</span></span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-stat-label">Rimanenti</span>
+        <span class="hud-stat-value" id="stat-remaining">— <span class="unit">km</span></span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-stat-label">Quota</span>
+        <span class="hud-stat-value" id="stat-ele">— <span class="unit">m</span></span>
+      </div>
+      <div class="hud-stat">
+        <span class="hud-stat-label">Pace</span>
+        <span class="hud-stat-value" id="stat-pace">—:— <span class="unit">/km</span></span>
+      </div>
+    </div>
+
+    <!-- Strip altimetrica -->
+    <div class="hud-elevation">
+      <div class="elevation-strip-bg">
+        <svg id="elevation-strip-svg" viewBox="0 0 600 60" preserveAspectRatio="none"></svg>
+      </div>
+    </div>
+
+    <!-- Controls bar -->
+    <div class="hud-controls" id="controls-bar">
+      <button class="ctrl-btn exit" id="btn-exit" title="Esci" aria-label="Esci dalla simulazione">✕</button>
+      <button class="ctrl-btn" id="btn-rewind" title="-500m" aria-label="Indietro 500 metri">⏮</button>
+
+      <!-- Pace controls (solo modalità manuale) -->
+      <div class="pace-controls" id="pace-controls">
+        <button class="pace-adj-btn" id="btn-pace-down" aria-label="Rallenta">
+          <span style="font-size:20px">−</span>
+          <span class="pace-delta">0:05</span>
+        </button>
+        <div>
+          <div class="pace-display" id="pace-live">6:00</div>
+          <span class="pace-display pace-unit" style="font-size:13px;color:var(--muted);text-align:center;display:block">/km</span>
+        </div>
+        <button class="pace-adj-btn" id="btn-pace-up" aria-label="Accelera">
+          <span style="font-size:20px">+</span>
+          <span class="pace-delta">0:05</span>
+        </button>
+      </div>
+
+      <button class="ctrl-btn play-pause" id="btn-play" title="Play/Pausa" aria-label="Play/Pausa">▶</button>
+
+      <button class="ctrl-btn" id="btn-forward" title="+500m" aria-label="Avanti 500 metri">⏭</button>
+
+      <!-- Moltiplicatori velocità -->
+      <div style="display:flex;gap:4px">
+        <button class="multiplier-btn" data-mult="0.5">×0.5</button>
+        <button class="multiplier-btn active" data-mult="1">×1</button>
+        <button class="multiplier-btn" data-mult="1.5">×1.5</button>
+        <button class="multiplier-btn" data-mult="2">×2</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Overlay selezione pace manuale -->
+<div id="pace-input-overlay" class="hidden">
+  <div class="pace-input-card" id="pace-card">
+    <h2>Imposta il tuo pace</h2>
+    <div class="pace-dial">
+      <button class="pace-dial-btn" id="dial-down">−</button>
+      <div class="pace-dial-value" id="dial-value">6:00</div>
+      <button class="pace-dial-btn" id="dial-up">+</button>
+    </div>
+    <button class="btn btn-primary btn-lg" id="btn-confirm-pace" style="width:100%">Inizia simulazione ▶</button>
+  </div>
+</div>
+
+
+<!-- Overlay connessione sensore BLE/GPS -->
+<div id="sensor-overlay">
+  <div class="sensor-card">
+    <h2 id="sensor-overlay-title">Connessione sensore</h2>
+    <p id="sensor-overlay-desc">Connessione in corso…</p>
+    <button class="btn btn-primary" id="btn-sensor-connect" style="width:100%">Connetti</button>
+    <button class="btn btn-secondary" id="btn-sensor-skip" style="width:100%;margin-top:8px">Usa input manuale</button>
+    <div class="sensor-status" id="sensor-status"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script type="module">
+import store from './js/store.js';
+import sensors from './js/sensors.js';
+import simulator from './js/simulator.js';
+import { parseGPXString } from './js/gpx-parser.js';
+import { buildElevationProfile } from './js/grade-calc.js';
+import MaplibreView from './js/maplibre-view.js';
+import StreetView from './js/streetview.js';
+import debug from './js/debug.js';
+
+let route = null;
+let meta = null;
+let maplibreView = null;
+let streetView = null;
+let leafletMap = null;
+let leafletMarker = null;
+let isRoadMode = false;
+let maplibreLoaded = false;
+
+// ---- Carica percorso ----
+async function init() {
+  const routeId = sessionStorage.getItem('simule_active_route_id');
+  route = store.route;
+  meta = store.routeMeta;
+
+  if (!route && routeId) {
+    const routeObj = store.recentRoutes.find(r => r.id === routeId);
+    if (routeObj) {
+      route = await parseGPXString(routeObj.gpx_data);
+      meta = routeObj;
+      store.set('route', route);
+      store.set('routeMeta', meta);
+    }
+  }
+
+  if (!route) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  isRoadMode = meta.mode === 'road';
+
+  document.getElementById('hud-route-name').textContent = meta.name;
+  document.getElementById('hud-route-mode').textContent = isRoadMode ? '🏙 Road' : '🏔 Trail';
+  document.getElementById('stat-remaining').innerHTML = `${(route[route.length-1].dist_from_start/1000).toFixed(2)} <span class="unit">km</span>`;
+
+  simulator.init(route);
+  simulator.onUpdate(handleSimulatorUpdate);
+
+  initView();
+  initSensorOverlay();
+  initControls();
+
+  // Aggiorna strip altimetrica iniziale
+  renderElevationStrip(0);
+}
+
+// ---- Inizializza vista ----
+async function initView() {
+  if (isRoadMode) {
+    document.getElementById('street-view-wrap').style.display = 'flex';
+    document.getElementById('fallback-map-container').style.display = 'none';
+    streetView = new StreetView();
+    streetView.init(
+      document.getElementById('street-view-img'),
+      document.getElementById('no-image-msg')
+    );
+    // Mappa Leaflet come fallback per road
+    initLeafletFallback();
+  } else {
+    // Modalità offroad: MapLibre 3D
+    document.getElementById('street-view-wrap').style.display = 'none';
+    document.getElementById('fallback-map-container').classList.add('visible');
+
+    if (typeof maplibregl !== 'undefined') {
+      maplibreView = new MaplibreView();
+      try {
+        await maplibreView.init('maplibre-container', route);
+        maplibreLoaded = true;
+        debug.log('MapLibre 3D attivo');
+      } catch (e) {
+        debug.warn('MapLibre fallback a Leaflet:', e);
+        initLeafletFallback();
+      }
+    } else {
+      initLeafletFallback();
+    }
+  }
+}
+
+function initLeafletFallback() {
+  const container = isRoadMode ? 'leaflet-fallback' : 'maplibre-container';
+  const el = document.getElementById(container);
+  el.classList.add('visible');
+  el.style.display = 'block';
+
+  leafletMap = L.map(el, { zoomControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OSM', className: 'lf-dark'
+  }).addTo(leafletMap);
+
+  const style = document.createElement('style');
+  style.textContent = '.lf-dark { filter: brightness(0.7) saturate(0.5) hue-rotate(180deg) invert(1); }';
+  document.head.appendChild(style);
+
+  const latlngs = route.map(p => [p.lat, p.lon]);
+  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(leafletMap);
+
+  const markerEl = document.createElement('div');
+  markerEl.style.cssText = 'width:14px;height:14px;background:var(--accent);border:3px solid white;border-radius:50%;';
+  leafletMarker = L.marker(latlngs[0], {
+    icon: L.divIcon({ html: markerEl.outerHTML, className: '', iconSize: [14,14], iconAnchor: [7,7] })
+  }).addTo(leafletMap);
+
+  leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+}
+
+// ---- Overlay sensore ----
+function initSensorOverlay() {
+  const sensorType = store.sensorType || 'manual-pace';
+  const overlay = document.getElementById('sensor-overlay');
+  const title = document.getElementById('sensor-overlay-title');
+  const desc = document.getElementById('sensor-overlay-desc');
+  const btnConnect = document.getElementById('btn-sensor-connect');
+  const btnSkip = document.getElementById('btn-sensor-skip');
+  const status = document.getElementById('sensor-status');
+
+  const LABELS = {
+    'ble-ftms': ['Connetti tapis roulant BLE', 'Premi il pulsante per cercare il tapis roulant Bluetooth nelle vicinanze.'],
+    'ble-hrm-rsc': ['Connetti foot pod BLE', 'Premi il pulsante per cercare il sensore scarpa (RSC) Bluetooth.'],
+    'gps': ['Attiva GPS', 'Simule utilizzerà il GPS del dispositivo per rilevare la velocità.'],
+    'pedometer': ['Attiva accelerometro', 'Simule utilizzerà il sensore di movimento del dispositivo per contare i passi.'],
+    'manual-pace': null,
+    'manual-speed': null
+  };
+
+  const info = LABELS[sensorType];
+
+  if (!info) {
+    overlay.classList.add('hidden');
+    showManualInput(sensorType);
+    return;
+  }
+
+  title.textContent = info[0];
+  desc.textContent = info[1];
+
+  btnConnect.addEventListener('click', async () => {
+    btnConnect.disabled = true;
+    status.textContent = 'Connessione in corso…';
+    try {
+      await sensors.connect(sensorType, getSensorOptions());
+      sensors.onUpdate(handleSensorUpdate);
+      overlay.classList.add('hidden');
+      simulator.play();
+      status.textContent = '';
+    } catch (e) {
+      status.textContent = 'Errore: ' + (e.message || 'connessione fallita');
+      btnConnect.disabled = false;
+      debug.warn('Sensore errore:', e);
+    }
+  });
+
+  btnSkip.addEventListener('click', () => {
+    overlay.classList.add('hidden');
+    showManualInput('manual-pace');
+  });
+}
+
+function getSensorOptions() {
+  return {
+    stride_length: store.getEffectiveStrideLength(),
+    threshold: store.prefs.stride_threshold || 1.2
+  };
+}
+
+// ---- Input manuale ----
+function showManualInput(type) {
+  if (type === 'manual-pace') {
+    showPaceInput();
+  } else if (type === 'manual-speed') {
+    showSpeedInput();
+  }
+}
+
+function showPaceInput() {
+  const overlay = document.getElementById('pace-input-overlay');
+  overlay.classList.remove('hidden');
+
+  let paceS = store.prefs.manual_pace_s || 360;
+
+  function updateDial() {
+    const min = Math.floor(paceS / 60);
+    const sec = paceS % 60;
+    document.getElementById('dial-value').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  }
+  updateDial();
+
+  function makeAdjuster(btn, delta) {
+    let pressTimer = null, intervalId = null;
+    btn.addEventListener('pointerdown', () => {
+      paceS = Math.max(180, Math.min(900, paceS + delta));
+      updateDial();
+      pressTimer = setTimeout(() => {
+        intervalId = setInterval(() => {
+          paceS = Math.max(180, Math.min(900, paceS + delta));
+          updateDial();
+        }, 150);
+      }, 500);
+    });
+    btn.addEventListener('pointerup', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+    btn.addEventListener('pointerleave', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+  }
+
+  makeAdjuster(document.getElementById('dial-down'), 5);
+  makeAdjuster(document.getElementById('dial-up'), -5);
+
+  document.getElementById('btn-confirm-pace').addEventListener('click', async () => {
+    overlay.classList.add('hidden');
+    store.setPref('manual_pace_s', paceS);
+    await sensors.connect('manual-pace');
+    sensors.onUpdate(handleSensorUpdate);
+    simulator.play();
+    document.getElementById('pace-controls').classList.add('visible');
+    updatePaceLiveDisplay();
+  });
+}
+
+function showSpeedInput() {
+  // Usa manual-pace come fallback semplificato
+  showPaceInput();
+}
+
+// ---- Aggiornamento sensore → simulator ----
+function handleSensorUpdate(data) {
+  simulator.setSpeed(data.speed_ms);
+  updatePaceLiveDisplay(data.pace_min_km);
+}
+
+function updatePaceLiveDisplay(paceMinKm) {
+  const paceEl = document.getElementById('pace-live');
+  if (!paceEl) return;
+  const p = paceMinKm || (store.prefs.manual_pace_s / 60);
+  const min = Math.floor(p);
+  const sec = Math.round((p - min) * 60);
+  paceEl.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+}
+
+// ---- Aggiornamento HUD dal simulator ----
+let lastElevStrip = 0;
+
+function handleSimulatorUpdate(state) {
+  const { current_dist, remaining_dist, current_point, next_point, heading,
+          current_grade, lookahead_grade, speed_ms, pace_min_km, total_dist } = state;
+
+  // Pendenza
+  const gradeEl = document.getElementById('hud-grade');
+  const sign = current_grade >= 0 ? '+' : '';
+  gradeEl.textContent = `${sign}${current_grade.toFixed(1)}%`;
+
+  // Classe colore pendenza
+  gradeEl.className = 'grade-value';
+  if (current_grade < 0) gradeEl.classList.add('grade-down');
+  else if (current_grade < 5) gradeEl.classList.add('grade-flat');
+  else if (current_grade < 10) gradeEl.classList.add('grade-mid');
+  else gradeEl.classList.add('grade-high');
+
+  // Lookahead alert
+  const alertEl = document.getElementById('hud-lookahead');
+  if (lookahead_grade) {
+    alertEl.textContent = `⚠ +${lookahead_grade.grade}% tra ${lookahead_grade.dist_from_here}m`;
+    alertEl.classList.add('visible');
+  } else {
+    alertEl.classList.remove('visible');
+  }
+
+  // Stats
+  document.getElementById('stat-done').innerHTML = `${(current_dist/1000).toFixed(2)} <span class="unit">km</span>`;
+  document.getElementById('stat-remaining').innerHTML = `${(remaining_dist/1000).toFixed(2)} <span class="unit">km</span>`;
+  document.getElementById('stat-ele').innerHTML = `${Math.round(current_point.ele)} <span class="unit">m</span>`;
+
+  if (pace_min_km > 0) {
+    const min = Math.floor(pace_min_km);
+    const sec = Math.round((pace_min_km - min) * 60);
+    document.getElementById('stat-pace').innerHTML = `${min}:${sec.toString().padStart(2,'0')} <span class="unit">/km</span>`;
+  }
+
+  // Strip altimetrica ogni 500m
+  if (Math.abs(current_dist - lastElevStrip) > 250) {
+    renderElevationStrip(current_dist);
+    lastElevStrip = current_dist;
+  }
+
+  // Aggiorna vista principale
+  if (isRoadMode && streetView) {
+    streetView.update({ current_point, heading }).catch(() => {});
+  } else if (!isRoadMode) {
+    if (maplibreLoaded && maplibreView) {
+      maplibreView.update({ current_point, next_point, heading });
+    } else if (leafletMap && leafletMarker) {
+      const ll = [current_point.lat, current_point.lon];
+      leafletMarker.setLatLng(ll);
+      leafletMap.setView(ll, leafletMap.getZoom());
+    }
+  }
+}
+
+// ---- Strip altimetrica SVG ----
+function renderElevationStrip(fromDist) {
+  const svg = document.getElementById('elevation-strip-svg');
+  const WINDOW = 5000;
+  const profile = buildElevationProfile(route, fromDist, WINDOW);
+  if (profile.length < 2) return;
+
+  const eles = profile.map(p => p.ele);
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
+  const range = Math.max(maxE - minE, 1);
+
+  const W = 600, H = 60, PAD = 4;
+  const pts = profile.map((p, i) => {
+    const x = (i / (profile.length - 1)) * (W - PAD*2) + PAD;
+    const y = H - PAD - ((p.ele - minE) / range) * (H - PAD*2);
+    return `${x},${y}`;
+  });
+
+  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const pathD = `M${pts.join('L')}`;
+  const fillD = `${pathD}L${W-PAD},${H}L${PAD},${H}Z`;
+
+  // Cursore: sempre all'inizio dello strip (posizione corrente)
+  const curX = PAD;
+  const curY = H - PAD - ((profile[0].ele - minE) / range) * (H - PAD*2);
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="sg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.4"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.05"/>
+      </linearGradient>
+    </defs>
+    <path d="${fillD}" fill="url(#sg)"/>
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.5"/>
+    <circle cx="${curX}" cy="${curY}" r="5" fill="${color}" stroke="white" stroke-width="2">
+      <animate attributeName="r" values="5;7;5" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+  `;
+}
+
+// ---- Controls ----
+function initControls() {
+  document.getElementById('btn-exit').addEventListener('click', () => {
+    simulator.pause();
+    sensors.disconnect();
+    window.location.href = 'preview.html';
+  });
+
+  document.getElementById('btn-rewind').addEventListener('click', () => {
+    simulator.seekBy(-500);
+  });
+
+  document.getElementById('btn-forward').addEventListener('click', () => {
+    simulator.seekBy(500);
+  });
+
+  const btnPlay = document.getElementById('btn-play');
+  btnPlay.addEventListener('click', () => {
+    simulator.toggle();
+    btnPlay.textContent = simulator.isPlaying() ? '⏸' : '▶';
+  });
+
+  // Multiplier
+  document.querySelectorAll('.multiplier-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mult = parseFloat(btn.dataset.mult);
+      simulator.setMultiplier(mult);
+      document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Pace controls live (modalità manuale)
+  function makePaceBtn(btn, delta) {
+    let pressTimer = null, intervalId = null;
+    btn.addEventListener('pointerdown', () => {
+      sensors.adjustPace(delta);
+      updatePaceLiveDisplay();
+      pressTimer = setTimeout(() => {
+        intervalId = setInterval(() => {
+          sensors.adjustPace(delta);
+          updatePaceLiveDisplay();
+        }, 300);
+      }, 600);
+    });
+    btn.addEventListener('pointerup', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+    btn.addEventListener('pointerleave', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+  }
+
+  makePaceBtn(document.getElementById('btn-pace-down'), 5);
+  makePaceBtn(document.getElementById('btn-pace-up'), -5);
+
+  // Tasto spazio = play/pause
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+      e.preventDefault();
+      simulator.toggle();
+      btnPlay.textContent = simulator.isPlaying() ? '⏸' : '▶';
+    }
+    if (e.code === 'ArrowRight') simulator.seekBy(100);
+    if (e.code === 'ArrowLeft') simulator.seekBy(-100);
+  });
+}
+
+// ---- MapLibre lazy load ----
+async function loadMapLibre() {
+  return new Promise((resolve) => {
+    if (typeof maplibregl !== 'undefined') { resolve(); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js';
+    script.onload = resolve;
+    script.onerror = resolve;
+    document.head.appendChild(script);
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.css';
+    document.head.appendChild(link);
+  });
+}
+
+// ---- Boot ----
+(async () => {
+  await loadMapLibre();
+  await init();
+})();
+</script>
+</body>
+</html>

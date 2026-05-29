@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Impostazioni</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo">SIMU<span>LE</span></div>
+  <a href="index.html" class="btn btn-secondary" style="padding:7px 14px;font-size:13px">← Home</a>
+</header>
+
+<main class="settings-layout">
+
+  <!-- Profilo runner -->
+  <section class="settings-section">
+    <h2>Profilo runner</h2>
+
+    <div class="form-group">
+      <label for="height-input">Altezza</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="height-input" min="140" max="220" step="1" placeholder="es. 175" style="max-width:120px">
+        <span style="color:var(--muted)">cm</span>
+      </div>
+      <span class="form-hint">Usata per calcolare automaticamente la lunghezza del passo</span>
+    </div>
+
+    <div class="form-group">
+      <label>
+        Lunghezza del passo
+        <span id="stride-source-badge" class="source-badge source-auto" style="margin-left:8px">calcolato</span>
+      </label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="stride-input" min="40" max="120" step="1" placeholder="es. 72" style="max-width:120px">
+        <span style="color:var(--muted)">cm</span>
+        <button class="btn btn-secondary" id="btn-reset-stride" style="padding:6px 12px;font-size:12px">Ricalcola da altezza</button>
+      </div>
+      <span class="form-hint" id="stride-hint">—</span>
+    </div>
+  </section>
+
+  <!-- Soglie e alert -->
+  <section class="settings-section">
+    <h2>Alert e lookahead</h2>
+
+    <div class="form-group">
+      <label for="grade-threshold">Soglia alert pendenza</label>
+      <div class="range-row">
+        <input type="range" id="grade-threshold" min="5" max="15" step="1">
+        <span class="range-value" id="grade-threshold-val">8%</span>
+      </div>
+      <span class="form-hint">Alert "⚠ salita imminente" quando la pendenza supera questa soglia nei prossimi 500m</span>
+    </div>
+
+    <div class="form-group">
+      <label>Distanza lookahead</label>
+      <div class="radio-group" id="lookahead-group">
+        <label class="radio-option" data-val="300">
+          <input type="radio" name="lookahead" value="300">300m
+        </label>
+        <label class="radio-option" data-val="500">
+          <input type="radio" name="lookahead" value="500">500m
+        </label>
+        <label class="radio-option" data-val="1000">
+          <input type="radio" name="lookahead" value="1000">1 km
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- API Keys -->
+  <section class="settings-section">
+    <h2>Chiavi API</h2>
+
+    <div class="form-group">
+      <label for="maptiler-key">MapTiler API Key</label>
+      <div class="api-key-row">
+        <div class="form-group" style="margin:0;flex:1">
+          <input type="text" id="maptiler-key" placeholder="Incolla qui la tua chiave MapTiler" autocomplete="off">
+        </div>
+        <a href="https://www.maptiler.com/cloud/" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni chiave →</a>
+      </div>
+      <span class="form-hint">Necessaria per la visualizzazione 3D offroad con terrain. 100.000 richieste/mese gratis.</span>
+    </div>
+
+    <div class="form-group">
+      <label for="mapillary-token">Mapillary Client Token</label>
+      <div class="api-key-row">
+        <div class="form-group" style="margin:0;flex:1">
+          <input type="text" id="mapillary-token" placeholder="Incolla qui il tuo token Mapillary" autocomplete="off">
+        </div>
+        <a href="https://www.mapillary.com/developer/api-documentation" target="_blank" rel="noopener" class="btn btn-secondary" style="padding:9px 12px;font-size:12px;white-space:nowrap">Ottieni token →</a>
+      </div>
+      <span class="form-hint">Fallback immagini stradali quando KartaView non ha copertura. Gratuito.</span>
+    </div>
+  </section>
+
+  <!-- Altre preferenze -->
+  <section class="settings-section">
+    <h2>Preferenze</h2>
+
+    <div class="form-group">
+      <label>Debug mode</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="debug-toggle" style="width:18px;height:18px;accent-color:var(--accent)">
+          <span style="font-size:14px">Attiva log dettagliati (aggiunge <code style="background:var(--surface2);padding:1px 5px;border-radius:3px;font-size:12px">?debug=1</code> all'URL)</span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <!-- Azioni -->
+  <section class="settings-section" style="border-top:1px solid var(--border);padding-top:20px">
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" id="btn-save">Salva impostazioni</button>
+      <button class="btn btn-danger" id="btn-clear-routes">Svuota percorsi recenti</button>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import store from './js/store.js';
+
+const heightInput = document.getElementById('height-input');
+const strideInput = document.getElementById('stride-input');
+const strideBadge = document.getElementById('stride-source-badge');
+const strideHint = document.getElementById('stride-hint');
+const btnResetStride = document.getElementById('btn-reset-stride');
+const gradeThreshold = document.getElementById('grade-threshold');
+const gradeThresholdVal = document.getElementById('grade-threshold-val');
+const maptilerKey = document.getElementById('maptiler-key');
+const mapillaryToken = document.getElementById('mapillary-token');
+const debugToggle = document.getElementById('debug-toggle');
+
+// ---- Carica preferenze ----
+function loadPrefs() {
+  const p = store.prefs;
+
+  if (p.runner_height_cm) heightInput.value = p.runner_height_cm;
+
+  const effectiveStride = store.getEffectiveStrideLength() * 100;
+  strideInput.value = Math.round(effectiveStride);
+  updateStrideBadge(p.stride_length_source || 'auto', effectiveStride);
+
+  gradeThreshold.value = p.grade_alert_threshold ?? 8;
+  gradeThresholdVal.textContent = (p.grade_alert_threshold ?? 8) + '%';
+
+  const lookahead = p.lookahead_dist_m ?? 500;
+  document.querySelectorAll('#lookahead-group .radio-option').forEach(opt => {
+    if (parseInt(opt.dataset.val) === lookahead) opt.classList.add('selected');
+    opt.querySelector('input').checked = parseInt(opt.dataset.val) === lookahead;
+  });
+
+  maptilerKey.value = p.maptiler_key || '';
+  mapillaryToken.value = p.mapillary_token || '';
+
+  const isDebug = new URLSearchParams(location.search).has('debug');
+  debugToggle.checked = isDebug;
+}
+
+function updateStrideBadge(source, cm) {
+  strideBadge.textContent = source === 'manual' ? 'personalizzato' : 'calcolato';
+  strideBadge.className = 'source-badge ' + (source === 'manual' ? 'source-manual-label' : 'source-auto');
+  if (source === 'auto' && cm) {
+    strideHint.textContent = `Calcolato automaticamente: ${Math.round(cm)} cm (altezza × 0.415)`;
+  } else {
+    strideHint.textContent = 'Valore personalizzato';
+  }
+}
+
+// ---- Altezza → stride automatico ----
+heightInput.addEventListener('input', () => {
+  const h = parseFloat(heightInput.value);
+  if (h >= 140 && h <= 220 && store.prefs.stride_length_source === 'auto') {
+    const auto = Math.round(h * 0.415);
+    strideInput.value = auto;
+    updateStrideBadge('auto', auto);
+  }
+});
+
+// ---- Stride manuale ----
+strideInput.addEventListener('input', () => {
+  updateStrideBadge('manual', parseFloat(strideInput.value));
+});
+
+// ---- Reset stride ----
+btnResetStride.addEventListener('click', () => {
+  const h = parseFloat(heightInput.value);
+  if (h >= 140 && h <= 220) {
+    const auto = Math.round(h * 0.415);
+    strideInput.value = auto;
+    store.setPref('stride_length_source', 'auto');
+    store.setPref('stride_length_cm', null);
+    updateStrideBadge('auto', auto);
+    showToast('Lunghezza passo ricalcolata dall\'altezza');
+  } else {
+    showToast('Inserisci prima la tua altezza', 'error');
+  }
+});
+
+// ---- Grade threshold ----
+gradeThreshold.addEventListener('input', () => {
+  gradeThresholdVal.textContent = gradeThreshold.value + '%';
+});
+
+// ---- Lookahead ----
+document.querySelectorAll('#lookahead-group .radio-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#lookahead-group .radio-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input').checked = true;
+  });
+});
+
+// ---- Salva ----
+document.getElementById('btn-save').addEventListener('click', () => {
+  const h = parseFloat(heightInput.value);
+  if (h >= 140 && h <= 220) store.setPref('runner_height_cm', h);
+
+  const s = parseFloat(strideInput.value);
+  if (s >= 40 && s <= 120) {
+    const isManual = strideBadge.textContent === 'personalizzato';
+    store.setPref('stride_length_cm', isManual ? s : null);
+    store.setPref('stride_length_source', isManual ? 'manual' : 'auto');
+  }
+
+  store.setPref('grade_alert_threshold', parseInt(gradeThreshold.value));
+
+  const lookaheadSelected = document.querySelector('#lookahead-group .radio-option.selected');
+  if (lookaheadSelected) store.setPref('lookahead_dist_m', parseInt(lookaheadSelected.dataset.val));
+
+  store.setPref('maptiler_key', maptilerKey.value.trim());
+  store.setPref('mapillary_token', mapillaryToken.value.trim());
+
+  // Debug mode: redirect con/senza ?debug=1
+  const debugActive = debugToggle.checked;
+  const url = new URL(location.href);
+  if (debugActive) url.searchParams.set('debug', '1');
+  else url.searchParams.delete('debug');
+  if (url.href !== location.href) {
+    history.replaceState({}, '', url);
+  }
+
+  showToast('Impostazioni salvate ✓', 'success');
+});
+
+// ---- Clear routes ----
+document.getElementById('btn-clear-routes').addEventListener('click', () => {
+  if (confirm('Rimuovere tutti i percorsi recenti?')) {
+    store.set('recentRoutes', []);
+    store._saveRecentRoutes();
+    showToast('Percorsi recenti rimossi');
+  }
+});
+
+// ---- Toast ----
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// ---- Init ----
+loadPrefs();
+</script>
+</body>
+</html>

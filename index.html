@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Run before you run.</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<header class="page-header">
+  <div class="logo">SIMU<span>LE</span></div>
+  <nav style="display:flex;gap:12px;align-items:center">
+    <a href="settings.html" class="btn btn-secondary" style="padding:7px 14px;font-size:13px">
+      ⚙ Impostazioni
+    </a>
+  </nav>
+</header>
+
+<main class="index-main">
+
+  <div class="index-hero">
+    <h1>Run <em>before</em><br>you run.</h1>
+    <p class="tagline">Simula qualsiasi percorso GPX mentre corri sul tapis roulant o in strada.</p>
+  </div>
+
+  <label class="drop-zone" id="drop-zone" for="file-input">
+    <span class="drop-zone-icon">🗺</span>
+    <h2>Carica un file GPX</h2>
+    <p>Trascina qui il file oppure clicca per selezionarlo</p>
+    <input type="file" id="file-input" accept=".gpx" aria-label="Carica file GPX">
+  </label>
+
+  <section class="recent-routes" id="recent-section" style="display:none">
+    <h3>Percorsi recenti</h3>
+    <div id="recent-list"></div>
+  </section>
+
+</main>
+
+<div class="loading-overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Analisi percorso in corso…</p>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { parseGPX, parseGPXString, computeRouteMeta } from './js/gpx-parser.js';
+import { classifyRoute } from './js/route-classifier.js';
+import store from './js/store.js';
+import debug from './js/debug.js';
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+const loading = document.getElementById('loading');
+const loadingMsg = document.getElementById('loading-msg');
+const recentSection = document.getElementById('recent-section');
+const recentList = document.getElementById('recent-list');
+
+// ---- Percorsi recenti ----
+function renderRecent() {
+  const routes = store.recentRoutes;
+  if (routes.length === 0) {
+    recentSection.style.display = 'none';
+    return;
+  }
+  recentSection.style.display = 'block';
+  recentList.innerHTML = '';
+  routes.forEach(r => {
+    const item = document.createElement('div');
+    item.className = 'route-item';
+    const icon = r.mode === 'road' ? '🏙' : '🏔';
+    item.innerHTML = `
+      <div class="route-item-icon ${r.mode}">${icon}</div>
+      <div class="route-item-info">
+        <div class="route-item-name">${escHtml(r.name)}</div>
+        <div class="route-item-meta">${r.distance_km.toFixed(1)} km · +${r.elevation_gain}m · ${r.mode === 'road' ? 'Road' : 'Trail'}</div>
+      </div>
+      <button class="route-item-remove" data-id="${r.id}" title="Rimuovi" aria-label="Rimuovi percorso">✕</button>
+    `;
+    item.addEventListener('click', (e) => {
+      if (e.target.classList.contains('route-item-remove')) return;
+      loadRoute(r);
+    });
+    item.querySelector('.route-item-remove').addEventListener('click', (e) => {
+      e.stopPropagation();
+      store.removeRecentRoute(r.id);
+      renderRecent();
+    });
+    recentList.appendChild(item);
+  });
+}
+
+function loadRoute(r) {
+  store.set('route', null);
+  store.set('routeMeta', {});
+  sessionStorage.setItem('simule_active_route_id', r.id);
+  window.location.href = 'preview.html';
+}
+
+// ---- Upload GPX ----
+async function handleFile(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.gpx')) {
+    showToast('Seleziona un file GPX valido', 'error');
+    return;
+  }
+
+  loading.classList.remove('hidden');
+  loadingMsg.textContent = 'Analisi percorso in corso…';
+
+  try {
+    const points = await parseGPX(file);
+    loadingMsg.textContent = 'Classificazione road/trail…';
+    const classification = await classifyRoute(points);
+    const meta = computeRouteMeta(points, file.name);
+    meta.mode = classification.mode;
+    meta.segments = classification.segments;
+
+    const id = crypto.randomUUID();
+    const routeObj = {
+      id,
+      name: meta.name,
+      mode: meta.mode,
+      distance_km: meta.distance_km,
+      elevation_gain: meta.elevation_gain,
+      gpx_data: await file.text(),
+      added_at: Date.now(),
+      segments: classification.segments,
+      max_elevation: meta.max_elevation,
+      max_grade: meta.max_grade,
+      avg_grade: meta.avg_grade,
+      elevation_loss: meta.elevation_loss
+    };
+
+    store.set('route', points);
+    store.set('routeMeta', meta);
+    store.addRecentRoute(routeObj);
+    sessionStorage.setItem('simule_active_route_id', id);
+
+    window.location.href = 'preview.html';
+  } catch (err) {
+    loading.classList.add('hidden');
+    showToast(err.message || 'Errore durante il caricamento del file', 'error');
+    debug.error(err);
+  }
+}
+
+// ---- Drag & Drop ----
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  handleFile(file);
+});
+
+fileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) handleFile(file);
+  fileInput.value = '';
+});
+
+// ---- Toast ----
+let toastTimer = null;
+function showToast(msg, type = '') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); }, 3500);
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- Percorsi di esempio ----
+async function loadSampleRoutes() {
+  const sampleFiles = [
+    { path: 'data/sample-routes/road-roma.gpx', name: 'Roma – Appia Antica', mode: 'road' },
+    { path: 'data/sample-routes/trail-dolomiti.gpx', name: 'Trail Dolomiti', mode: 'offroad' }
+  ];
+
+  for (const s of sampleFiles) {
+    const exists = store.recentRoutes.find(r => r.name === s.name);
+    if (exists) continue;
+    try {
+      const resp = await fetch(s.path);
+      if (!resp.ok) continue;
+      const text = await resp.text();
+      const points = await parseGPXString(text);
+      const meta = computeRouteMeta(points, s.name + '.gpx');
+      store.addRecentRoute({
+        id: crypto.randomUUID(),
+        name: s.name,
+        mode: s.mode,
+        distance_km: meta.distance_km,
+        elevation_gain: meta.elevation_gain,
+        gpx_data: text,
+        added_at: Date.now() - 86400000,
+        max_elevation: meta.max_elevation,
+        max_grade: meta.max_grade,
+        avg_grade: meta.avg_grade,
+        elevation_loss: meta.elevation_loss,
+        segments: []
+      });
+    } catch { /* sample non disponibile */ }
+  }
+  renderRecent();
+}
+
+// ---- Init ----
+renderRecent();
+loadSampleRoutes();
+</script>
+</body>
+</html>

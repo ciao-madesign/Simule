@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simule — Preview percorso</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css">
+  <style>
+    .preview-topbar { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid var(--border); background:var(--surface); }
+    .preview-topbar .route-name { flex:1; font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:20px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    #preview-map .leaflet-container { background:#0a0c0f; }
+  </style>
+</head>
+<body>
+
+<div id="topbar" class="preview-topbar">
+  <a href="index.html" class="btn btn-secondary" style="padding:7px 12px;font-size:13px;flex-shrink:0">← Indietro</a>
+  <span id="route-name" class="route-name">Caricamento…</span>
+  <span id="mode-badge" class="badge"></span>
+  <button id="btn-start" class="btn btn-primary btn-lg" disabled>▶ Avvia</button>
+</div>
+
+<div class="preview-layout">
+  <div class="preview-map-container">
+    <div id="preview-map"></div>
+  </div>
+  <aside class="preview-sidebar">
+    <!-- Stats -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">Distanza</div>
+        <div class="stat-value" id="stat-dist">—<span class="stat-unit">km</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Dislivello +</div>
+        <div class="stat-value" id="stat-gain">—<span class="stat-unit">m</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Quota max</div>
+        <div class="stat-value" id="stat-maxele">—<span class="stat-unit">m</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Pendenza max</div>
+        <div class="stat-value" id="stat-maxgrade">—<span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Pendenza media</div>
+        <div class="stat-value" id="stat-avggrade">—<span class="stat-unit">%</span></div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">Dislivello −</div>
+        <div class="stat-value" id="stat-loss">—<span class="stat-unit">m</span></div>
+      </div>
+    </div>
+
+    <!-- Profilo altimetrico -->
+    <div class="elevation-profile">
+      <h4>Profilo altimetrico</h4>
+      <svg id="elevation-svg" viewBox="0 0 300 80" preserveAspectRatio="none"></svg>
+    </div>
+
+    <!-- Coverage banner (solo road) -->
+    <div id="coverage-banner" style="display:none"></div>
+
+    <!-- Selezione sensore -->
+    <div class="sensor-section">
+      <h4>Sorgente movimento</h4>
+      <div id="sensor-list"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="loading-overlay hidden" id="loading">
+  <div class="spinner"></div>
+  <p id="loading-msg">Caricamento percorso…</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+<script type="module">
+import { parseGPXString, computeRouteMeta } from './js/gpx-parser.js';
+import { buildElevationProfile } from './js/grade-calc.js';
+import { checkCoverage } from './js/streetview.js';
+import store from './js/store.js';
+import sensors from './js/sensors.js';
+import debug from './js/debug.js';
+
+const loading = document.getElementById('loading');
+const loadingMsg = document.getElementById('loading-msg');
+const routeNameEl = document.getElementById('route-name');
+const modeBadgeEl = document.getElementById('mode-badge');
+const btnStart = document.getElementById('btn-start');
+
+let currentRoute = null;
+let currentMeta = null;
+let selectedSensor = 'manual-pace';
+
+// ---- Carica percorso ----
+async function loadRoute() {
+  loading.classList.remove('hidden');
+
+  const routeId = sessionStorage.getItem('simule_active_route_id');
+  let routeObj = null;
+
+  if (routeId) {
+    routeObj = store.recentRoutes.find(r => r.id === routeId);
+  }
+
+  if (!routeObj && store.route) {
+    currentRoute = store.route;
+    currentMeta = store.routeMeta;
+    initView();
+    return;
+  }
+
+  if (!routeObj) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  try {
+    loadingMsg.textContent = 'Parsing percorso…';
+    currentRoute = await parseGPXString(routeObj.gpx_data);
+    currentMeta = {
+      name: routeObj.name,
+      mode: routeObj.mode,
+      distance_km: routeObj.distance_km,
+      elevation_gain: routeObj.elevation_gain,
+      elevation_loss: routeObj.elevation_loss,
+      max_elevation: routeObj.max_elevation,
+      max_grade: routeObj.max_grade,
+      avg_grade: routeObj.avg_grade,
+      segments: routeObj.segments || []
+    };
+    store.set('route', currentRoute);
+    store.set('routeMeta', currentMeta);
+    initView();
+  } catch (err) {
+    loading.classList.add('hidden');
+    debug.error(err);
+    alert('Errore caricamento percorso: ' + err.message);
+    window.location.href = 'index.html';
+  }
+}
+
+function initView() {
+  loading.classList.add('hidden');
+  renderTopbar();
+  renderStats();
+  renderElevationProfile();
+  renderMap();
+  renderSensors();
+  if (currentMeta.mode === 'road') checkRoadCoverage();
+}
+
+// ---- Topbar ----
+function renderTopbar() {
+  routeNameEl.textContent = currentMeta.name;
+  modeBadgeEl.className = 'badge ' + (currentMeta.mode === 'road' ? 'badge-road' : 'badge-trail');
+  modeBadgeEl.textContent = currentMeta.mode === 'road' ? '🏙 Road' : '🏔 Trail';
+  btnStart.disabled = false;
+}
+
+// ---- Stats ----
+function renderStats() {
+  const m = currentMeta;
+  setValue('stat-dist', m.distance_km.toFixed(1), 'km');
+  setValue('stat-gain', m.elevation_gain, 'm');
+  setValue('stat-maxele', m.max_elevation, 'm');
+  setValue('stat-maxgrade', m.max_grade.toFixed(1), '%');
+  setValue('stat-avggrade', m.avg_grade.toFixed(1), '%');
+  setValue('stat-loss', m.elevation_loss, 'm');
+}
+
+function setValue(id, val, unit) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `${val}<span class="stat-unit">${unit}</span>`;
+}
+
+// ---- Profilo altimetrico SVG ----
+function renderElevationProfile() {
+  const svg = document.getElementById('elevation-svg');
+  const profile = buildElevationProfile(currentRoute, 0, currentRoute[currentRoute.length-1].dist_from_start);
+  const eles = profile.map(p => p.ele);
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
+  const range = Math.max(maxE - minE, 1);
+
+  const W = 300, H = 80, PAD = 4;
+  const pts = profile.map((p, i) => {
+    const x = (i / (profile.length - 1)) * (W - PAD*2) + PAD;
+    const y = H - PAD - ((p.ele - minE) / range) * (H - PAD*2);
+    return `${x},${y}`;
+  });
+
+  const color = currentMeta.mode === 'road' ? '#00b8ff' : '#00e5a0';
+  const pathD = `M${pts.join('L')}`;
+  const fillD = `${pathD}L${W-PAD},${H}L${PAD},${H}Z`;
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="eg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${color}" stop-opacity="0.5"/>
+        <stop offset="100%" stop-color="${color}" stop-opacity="0.05"/>
+      </linearGradient>
+    </defs>
+    <path d="${fillD}" fill="url(#eg)"/>
+    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.5"/>
+  `;
+}
+
+// ---- Mappa Leaflet ----
+function renderMap() {
+  const map = L.map('preview-map', { zoomControl: true });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    className: 'map-tiles'
+  }).addTo(map);
+
+  const latlngs = currentRoute.map(p => [p.lat, p.lon]);
+  const color = currentMeta.mode === 'road' ? '#00b8ff' : '#00e5a0';
+
+  // Disegna segmenti colorati per tipo (road/offroad) se disponibili
+  const segs = currentMeta.segments;
+  if (segs && segs.length > 0) {
+    segs.forEach(seg => {
+      const segColor = seg.type === 'road' ? '#00b8ff' : '#00e5a0';
+      const segPoints = currentRoute.filter(p =>
+        p.dist_from_start >= seg.start_dist && p.dist_from_start <= seg.end_dist
+      );
+      if (segPoints.length > 1) {
+        L.polyline(segPoints.map(p => [p.lat, p.lon]), {
+          color: segColor, weight: 4, opacity: 0.85
+        }).addTo(map);
+      }
+    });
+  } else {
+    L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(map);
+  }
+
+  // Marker start/end
+  const startIcon = L.divIcon({ html: '<div style="background:#00e5a0;width:12px;height:12px;border:3px solid white;border-radius:50%;"></div>', className: '' });
+  const endIcon = L.divIcon({ html: '<div style="background:#ff4444;width:12px;height:12px;border:3px solid white;border-radius:50%;"></div>', className: '' });
+  L.marker(latlngs[0], { icon: startIcon }).addTo(map);
+  L.marker(latlngs[latlngs.length - 1], { icon: endIcon }).addTo(map);
+
+  const bounds = L.latLngBounds(latlngs);
+  map.fitBounds(bounds, { padding: [24, 24] });
+
+  // Tema scuro per OSM tiles
+  const style = document.createElement('style');
+  style.textContent = '.map-tiles { filter: brightness(0.8) saturate(0.7) hue-rotate(180deg) invert(1); }';
+  document.head.appendChild(style);
+}
+
+// ---- Coverage ----
+async function checkRoadCoverage() {
+  const banner = document.getElementById('coverage-banner');
+  banner.style.display = 'flex';
+  banner.className = 'coverage-banner';
+  banner.innerHTML = '<span>🔍</span> Verifica copertura immagini stradali…';
+
+  try {
+    const result = await checkCoverage(currentRoute);
+    let cls, icon, msg;
+    if (result.percent >= 70) { cls = 'coverage-good'; icon = '✅'; msg = `${result.percent}% del percorso coperto da immagini`; }
+    else if (result.percent >= 30) { cls = 'coverage-partial'; icon = '⚠️'; msg = `${result.percent}% coperto — alcune sezioni senza immagini`; }
+    else { cls = 'coverage-low'; icon = '❌'; msg = `Solo ${result.percent}% coperto — usa la mappa 2D come fallback`; }
+    banner.className = 'coverage-banner ' + cls;
+    banner.innerHTML = `<span>${icon}</span> ${msg}`;
+  } catch {
+    banner.style.display = 'none';
+  }
+}
+
+// ---- Sensori ----
+const SENSOR_DEFS = [
+  {
+    id: 'ble-ftms',
+    name: 'Tapis roulant Bluetooth (FTMS)',
+    desc: 'Legge velocità direttamente dal macchinario smart via BLE. Precisione massima.',
+    requiresBT: true
+  },
+  {
+    id: 'ble-hrm-rsc',
+    name: 'Foot pod (RSC Bluetooth)',
+    desc: 'Sensore da scarpa Garmin, Stryd o compatibile. Funziona su qualsiasi tapis roulant.',
+    requiresBT: true
+  },
+  {
+    id: 'gps',
+    name: 'GPS telefono',
+    desc: 'Usa il GPS del dispositivo. Ideale per running outdoor.',
+    requiresGeo: true
+  },
+  {
+    id: 'pedometer',
+    name: 'Accelerometro / Contapassi',
+    desc: 'Conta i passi via sensore del telefono. Funziona indoor e outdoor.',
+    requiresMotion: true
+  },
+  {
+    id: 'manual-pace',
+    name: 'Pace manuale (min/km)',
+    desc: 'Inserisci il tuo ritmo target. Il percorso avanza a velocità costante.'
+  },
+  {
+    id: 'manual-speed',
+    name: 'Velocità manuale (km/h)',
+    desc: 'Slider 0–20 km/h. Utile per test e debug.'
+  }
+];
+
+function renderSensors() {
+  const available = sensors.getAvailableSources();
+  const list = document.getElementById('sensor-list');
+  list.innerHTML = '';
+
+  SENSOR_DEFS.forEach(def => {
+    const isAvailable = available.includes(def.id);
+    const div = document.createElement('div');
+    div.className = 'sensor-option' + (!isAvailable ? ' disabled' : '') + (selectedSensor === def.id ? ' selected' : '');
+    div.setAttribute('role', 'radio');
+    div.setAttribute('aria-checked', selectedSensor === def.id);
+
+    let unavailMsg = '';
+    if (!isAvailable) {
+      if (def.requiresBT) unavailMsg = '<div class="sensor-unavailable">Web Bluetooth non disponibile in questo browser</div>';
+      else if (def.requiresGeo) unavailMsg = '<div class="sensor-unavailable">Geolocation non disponibile</div>';
+      else if (def.requiresMotion) unavailMsg = '<div class="sensor-unavailable">DeviceMotion non disponibile</div>';
+    }
+
+    div.innerHTML = `
+      <div class="sensor-radio"></div>
+      <div class="sensor-info">
+        <div class="sensor-name">${def.name}</div>
+        <div class="sensor-desc">${def.desc}</div>
+        ${unavailMsg}
+      </div>
+    `;
+
+    if (isAvailable) {
+      div.addEventListener('click', () => {
+        selectedSensor = def.id;
+        list.querySelectorAll('.sensor-option').forEach(el => {
+          el.classList.remove('selected');
+          el.setAttribute('aria-checked', 'false');
+        });
+        div.classList.add('selected');
+        div.setAttribute('aria-checked', 'true');
+        store.set('sensorType', selectedSensor);
+      });
+    }
+
+    list.appendChild(div);
+  });
+
+  // Default al primo disponibile non-manuale se BLE è disponibile
+  if (available.includes('ble-ftms')) {
+    selectedSensor = 'ble-ftms';
+  } else {
+    selectedSensor = 'manual-pace';
+  }
+  store.set('sensorType', selectedSensor);
+  list.querySelectorAll('.sensor-option').forEach(el => {
+    const id = SENSOR_DEFS[Array.from(list.children).indexOf(el)]?.id;
+    if (id === selectedSensor) {
+      el.classList.add('selected');
+      el.setAttribute('aria-checked', 'true');
+    }
+  });
+}
+
+// ---- Start ----
+btnStart.addEventListener('click', () => {
+  store.set('sensorType', selectedSensor);
+  window.location.href = 'simulate.html';
+});
+
+// ---- Init ----
+loadRoute();
+</script>
+</body>
+</html>

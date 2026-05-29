@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Simule Sample" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Trail Dolomiti – Passo Pordoi</name>
+    <desc>Percorso trail con dislivello significativo nelle Dolomiti</desc>
+  </metadata>
+  <trk>
+    <name>Trail Dolomiti – Passo Pordoi</name>
+    <trkseg>
+      <trkpt lat="46.4870" lon="11.8120"><ele>1450</ele></trkpt>
+      <trkpt lat="46.4878" lon="11.8132"><ele>1475</ele></trkpt>
+      <trkpt lat="46.4886" lon="11.8144"><ele>1510</ele></trkpt>
+      <trkpt lat="46.4894" lon="11.8156"><ele>1555</ele></trkpt>
+      <trkpt lat="46.4902" lon="11.8168"><ele>1605</ele></trkpt>
+      <trkpt lat="46.4910" lon="11.8180"><ele>1660</ele></trkpt>
+      <trkpt lat="46.4918" lon="11.8192"><ele>1720</ele></trkpt>
+      <trkpt lat="46.4926" lon="11.8204"><ele>1785</ele></trkpt>
+      <trkpt lat="46.4934" lon="11.8216"><ele>1850</ele></trkpt>
+      <trkpt lat="46.4942" lon="11.8228"><ele>1910</ele></trkpt>
+      <trkpt lat="46.4950" lon="11.8240"><ele>1965</ele></trkpt>
+      <trkpt lat="46.4958" lon="11.8252"><ele>2010</ele></trkpt>
+      <trkpt lat="46.4966" lon="11.8264"><ele>2050</ele></trkpt>
+      <trkpt lat="46.4974" lon="11.8276"><ele>2085</ele></trkpt>
+      <trkpt lat="46.4982" lon="11.8288"><ele>2115</ele></trkpt>
+      <trkpt lat="46.4990" lon="11.8300"><ele>2140</ele></trkpt>
+      <trkpt lat="46.4998" lon="11.8312"><ele>2160</ele></trkpt>
+      <trkpt lat="46.5006" lon="11.8324"><ele>2175</ele></trkpt>
+      <trkpt lat="46.5014" lon="11.8336"><ele>2185</ele></trkpt>
+      <trkpt lat="46.5022" lon="11.8348"><ele>2192</ele></trkpt>
+      <trkpt lat="46.5030" lon="11.8360"><ele>2196</ele></trkpt>
+      <trkpt lat="46.5038" lon="11.8372"><ele>2196</ele></trkpt>
+      <trkpt lat="46.5046" lon="11.8384"><ele>2190</ele></trkpt>
+      <trkpt lat="46.5054" lon="11.8396"><ele>2180</ele></trkpt>
+      <trkpt lat="46.5062" lon="11.8408"><ele>2165</ele></trkpt>
+      <trkpt lat="46.5070" lon="11.8420"><ele>2145</ele></trkpt>
+      <trkpt lat="46.5078" lon="11.8432"><ele>2120</ele></trkpt>
+      <trkpt lat="46.5086" lon="11.8444"><ele>2090</ele></trkpt>
+      <trkpt lat="46.5094" lon="11.8456"><ele>2055</ele></trkpt>
+      <trkpt lat="46.5102" lon="11.8468"><ele>2015</ele></trkpt>
+    </trkseg>
+  </trk>
+</gpx>
