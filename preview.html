@@ -79,6 +79,26 @@
     <!-- Coverage banner (solo road) -->
     <div id="coverage-banner" style="display:none"></div>
 
+    <!-- Video POV (opzionale) -->
+    <div class="video-section">
+      <h4>Video POV <span style="color:var(--muted);font-weight:300;text-transform:none;letter-spacing:0">(opzionale)</span></h4>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>URL YouTube o nome file MP4</label>
+        <input type="text" id="video-url-input" placeholder="https://youtube.com/watch?v=… oppure video.mp4" style="font-size:13px">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="form-group" style="margin-bottom:0">
+          <label>Pace medio video</label>
+          <input type="text" id="video-pace-input" placeholder="5:30" style="font-size:13px">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Durata video (min:sec)</label>
+          <input type="text" id="video-duration-input" placeholder="42:00" style="font-size:13px">
+        </div>
+      </div>
+      <div id="video-preview-badge" style="display:none;margin-top:8px;padding:6px 12px;background:rgba(0,184,255,0.1);border:1px solid rgba(0,184,255,0.25);border-radius:6px;font-size:12px;color:var(--accent2)"></div>
+    </div>
+
     <!-- Selezione sensore -->
     <div class="sensor-section">
       <h4>Sorgente movimento</h4>
@@ -415,9 +435,63 @@ function renderSensors() {
   });
 }
 
+// ---- Video parsing ----
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+function parsePaceToSpeedMs(paceStr) {
+  const m = paceStr.trim().match(/^(\d+):(\d{2})$/);
+  if (!m) return 0;
+  const totalSec = parseInt(m[1]) * 60 + parseInt(m[2]);
+  return totalSec > 0 ? 1000 / totalSec : 0; // m/s
+}
+
+function parseDurationToSeconds(durStr) {
+  const m = durStr.trim().match(/^(\d+):(\d{2})$/);
+  if (!m) return 0;
+  return parseInt(m[1]) * 60 + parseInt(m[2]);
+}
+
+function parseVideoMeta() {
+  const urlVal = document.getElementById('video-url-input').value.trim();
+  const paceVal = document.getElementById('video-pace-input').value.trim();
+  const durVal = document.getElementById('video-duration-input').value.trim();
+  if (!urlVal) return null;
+
+  const ytId = extractYouTubeId(urlVal);
+  const avgSpeedMs = parsePaceToSpeedMs(paceVal);
+  const durationSeconds = parseDurationToSeconds(durVal);
+
+  if (ytId) return { type: 'youtube', id: ytId, avgSpeedMs, durationSeconds };
+  if (urlVal.match(/\.mp4/i)) return { type: 'mp4', url: urlVal, avgSpeedMs, durationSeconds };
+  return null;
+}
+
+// Aggiorna badge anteprima video quando l'utente digita
+['video-url-input', 'video-pace-input', 'video-duration-input'].forEach(id => {
+  document.getElementById(id).addEventListener('input', () => {
+    const vm = parseVideoMeta();
+    const badge = document.getElementById('video-preview-badge');
+    if (vm) {
+      const typeLabel = vm.type === 'youtube' ? '▶ YouTube' : '▶ MP4';
+      const paceLabel = vm.avgSpeedMs > 0 ? ` · ${document.getElementById('video-pace-input').value.trim()}/km` : '';
+      const durLabel = vm.durationSeconds > 0 ? ` · ${document.getElementById('video-duration-input').value.trim()}` : '';
+      badge.textContent = `${typeLabel}${paceLabel}${durLabel}`;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
+  });
+});
+
 // ---- Start ----
 btnStart.addEventListener('click', () => {
   store.set('sensorType', selectedSensor);
+  const vm = parseVideoMeta();
+  currentMeta.video = vm || null;
+  store.set('routeMeta', currentMeta);
   window.location.href = 'simulate.html';
 });
 

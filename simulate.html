@@ -9,105 +9,127 @@
   <style>
     body { overflow: hidden; }
 
-    /* Vista secondaria nascosta */
-    #fallback-map-container { position:absolute; inset:0; display:none; }
-    #fallback-map-container.visible { display:block; }
+    #maplibre-container { position: absolute; inset: 0; }
 
-    /* Street view */
-    #street-view-wrap { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    #street-view-img { width:100%; height:100%; object-fit:cover; transition:opacity 0.3s; }
-    #no-image-msg { position:absolute; text-align:center; color:var(--muted); }
-    #no-image-msg.hidden { display:none; }
+    /* Street view overlay (road mode, sopra MapLibre) */
+    #street-view-wrap {
+      position: absolute; inset: 0;
+      display: none; align-items: center; justify-content: center;
+      overflow: hidden; transition: background 0.4s;
+    }
+    #street-view-img { width: 100%; height: 100%; object-fit: cover; }
+    #no-image-badge {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,12,15,0.75); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 14px;
+      font-size: 12px; color: var(--muted); white-space: nowrap;
+      backdrop-filter: blur(6px); display: none; z-index: 2;
+    }
 
-    /* MapLibre / Leaflet fallback */
-    #maplibre-container { position:absolute; inset:0; }
-    #leaflet-fallback { position:absolute; inset:0; display:none; }
-    #leaflet-fallback.visible { display:block; }
+    /* Video embed view */
+    #video-view { position: absolute; inset: 0; background: #000; display: none; }
+    #yt-player-wrap { width: 100%; height: 100%; }
+    #mp4-player { width: 100%; height: 100%; object-fit: cover; display: none; }
+
+    /* PiP mini-map (in video mode) */
+    #pip-map-wrap {
+      position: absolute; bottom: 80px; left: 12px;
+      width: 220px; height: 140px; border-radius: 10px;
+      overflow: hidden; display: none; z-index: 5;
+      border: 2px solid rgba(255,255,255,0.18);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+    }
+
+    /* Video rate badge */
+    #video-sync-badge {
+      position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+      background: rgba(10,12,15,0.78); border: 1px solid var(--border);
+      border-radius: 100px; padding: 5px 16px;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700;
+      font-size: 13px; color: var(--accent2);
+      backdrop-filter: blur(6px); display: none; z-index: 6;
+    }
 
     /* Grade color classes */
     .grade-down { color: var(--down); }
     .grade-flat { color: var(--accent); }
-    .grade-mid { color: var(--warn); }
+    .grade-mid  { color: var(--warn); }
     .grade-high { color: var(--danger); }
 
     /* Pace input overlay */
     #pace-input-overlay {
-      position:fixed; inset:0; background:rgba(10,12,15,0.85);
-      display:flex; align-items:center; justify-content:center;
-      z-index:100; backdrop-filter:blur(8px);
+      position: fixed; inset: 0; background: rgba(10,12,15,0.85);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; backdrop-filter: blur(8px);
     }
-    #pace-input-overlay.hidden { display:none; }
+    #pace-input-overlay.hidden { display: none; }
     .pace-input-card {
-      background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--radius-lg); padding:32px; min-width:280px;
-      text-align:center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px; min-width: 280px; text-align: center;
     }
     .pace-input-card h2 {
-      font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px;
-      margin-bottom:20px;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 20px;
     }
-    .pace-dial {
-      display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:24px;
-    }
+    .pace-dial { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 24px; }
     .pace-dial-value {
-      font-family:'Barlow Condensed',sans-serif; font-weight:900; font-size:56px;
-      color:var(--text); min-width:140px;
+      font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 56px;
+      color: var(--text); min-width: 140px;
     }
     .pace-dial-btn {
-      width:48px; height:48px; border-radius:50%;
-      background:var(--surface2); border:1px solid var(--border);
-      font-size:22px; color:var(--text);
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; user-select:none;
+      width: 48px; height: 48px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border);
+      font-size: 22px; color: var(--text);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none;
     }
-    .pace-dial-btn:active { background:var(--border); }
+    .pace-dial-btn:active { background: var(--border); }
 
-    .speed-slider-wrap { margin-bottom:24px; }
-    .speed-slider-wrap input[type=range] { width:100%; accent-color:var(--accent); }
-    .speed-label { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:28px; margin-top:8px; }
-
-    /* Sensor connect overlay */
+    /* Sensor overlay */
     #sensor-overlay {
-      position:fixed; inset:0; background:rgba(10,12,15,0.9);
-      display:flex; align-items:center; justify-content:center;
-      z-index:200; backdrop-filter:blur(8px);
+      position: fixed; inset: 0; background: rgba(10,12,15,0.9);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; backdrop-filter: blur(8px);
     }
-    #sensor-overlay.hidden { display:none; }
+    #sensor-overlay.hidden { display: none; }
     .sensor-card {
-      background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--radius-lg); padding:32px; min-width:300px; max-width:400px;
-      text-align:center;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 32px; min-width: 300px; max-width: 400px; text-align: center;
     }
-    .sensor-card h2 { font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:22px; margin-bottom:8px; }
-    .sensor-card p { color:var(--muted); font-size:14px; margin-bottom:24px; }
-    .sensor-status { font-size:13px; color:var(--muted); margin-top:12px; min-height:18px; }
+    .sensor-card h2 { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 22px; margin-bottom: 8px; }
+    .sensor-card p  { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+    .sensor-status  { font-size: 13px; color: var(--muted); margin-top: 12px; min-height: 18px; }
   </style>
 </head>
 <body>
 
-<!-- Vista principale -->
 <div class="simulate-layout">
   <div id="view-container">
-    <!-- Street view -->
+    <!-- MapLibre: sempre sfondo (city in road, satellite+3D in trail) -->
+    <div id="maplibre-container"></div>
+
+    <!-- Street view overlay (road mode senza video) -->
     <div id="street-view-wrap">
       <img id="street-view-img" src="" alt="Street view" style="display:none">
-      <div id="no-image-msg">
-        <div style="font-size:48px;margin-bottom:12px">🗺</div>
-        <div>Nessuna immagine disponibile</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Visualizzazione mappa attiva</div>
-      </div>
+      <div id="no-image-badge">🗺 Mappa attiva</div>
     </div>
 
-    <!-- Mappa 3D/2D -->
-    <div id="fallback-map-container">
-      <div id="maplibre-container"></div>
-      <div id="leaflet-fallback"></div>
+    <!-- Video embed (sostituisce tutto quando attivo) -->
+    <div id="video-view">
+      <div id="yt-player-wrap"></div>
+      <video id="mp4-player" playsinline></video>
     </div>
+
+    <!-- PiP mini-map (visibile in video mode) -->
+    <div id="pip-map-wrap">
+      <div id="pip-map" style="width:100%;height:100%;"></div>
+    </div>
+
+    <!-- Badge velocità video -->
+    <div id="video-sync-badge">▶ ×1.00</div>
   </div>
 
   <!-- HUD -->
   <div class="hud" id="hud">
-    <!-- Topbar -->
     <div class="hud-topbar">
       <div class="hud-logo">SIMULE</div>
       <div class="hud-route-info">
@@ -116,16 +138,13 @@
       </div>
     </div>
 
-    <!-- Pendenza -->
     <div class="hud-grade" id="hud-grade-wrap">
       <div class="grade-value grade-flat" id="hud-grade">+0.0%</div>
       <div class="grade-label">Pendenza</div>
     </div>
 
-    <!-- Lookahead alert -->
     <div class="hud-lookahead" id="hud-lookahead">⚠ +0% tra 0m</div>
 
-    <!-- Stats laterali -->
     <div class="hud-stats">
       <div class="hud-stat">
         <span class="hud-stat-label">Percorsi</span>
@@ -149,19 +168,16 @@
       </div>
     </div>
 
-    <!-- Strip altimetrica -->
     <div class="hud-elevation">
       <div class="elevation-strip-bg">
-        <svg id="elevation-strip-svg" viewBox="0 0 600 100" preserveAspectRatio="none"></svg>
+        <svg id="elevation-strip-svg" preserveAspectRatio="none"></svg>
       </div>
     </div>
 
-    <!-- Controls bar -->
     <div class="hud-controls" id="controls-bar">
-      <button class="ctrl-btn exit" id="btn-exit" title="Esci" aria-label="Esci dalla simulazione">✕</button>
-      <button class="ctrl-btn" id="btn-rewind" title="-500m" aria-label="Indietro 500 metri">⏮</button>
+      <button class="ctrl-btn exit" id="btn-exit" title="Esci" aria-label="Esci">✕</button>
+      <button class="ctrl-btn" id="btn-rewind" title="-500m" aria-label="Indietro 500m">⏮</button>
 
-      <!-- Pace controls (solo modalità manuale) -->
       <div class="pace-controls" id="pace-controls">
         <button class="pace-adj-btn" id="btn-pace-down" aria-label="Rallenta">
           <span style="font-size:20px">−</span>
@@ -169,7 +185,7 @@
         </button>
         <div>
           <div class="pace-display" id="pace-live">6:00</div>
-          <span class="pace-display pace-unit" style="font-size:13px;color:var(--muted);text-align:center;display:block">/km</span>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:var(--muted);text-align:center;display:block">/km</span>
         </div>
         <button class="pace-adj-btn" id="btn-pace-up" aria-label="Accelera">
           <span style="font-size:20px">+</span>
@@ -178,10 +194,8 @@
       </div>
 
       <button class="ctrl-btn play-pause" id="btn-play" title="Play/Pausa" aria-label="Play/Pausa">▶</button>
+      <button class="ctrl-btn" id="btn-forward" title="+500m" aria-label="Avanti 500m">⏭</button>
 
-      <button class="ctrl-btn" id="btn-forward" title="+500m" aria-label="Avanti 500 metri">⏭</button>
-
-      <!-- Moltiplicatori velocità -->
       <div style="display:flex;gap:4px">
         <button class="multiplier-btn" data-mult="0.5">×0.5</button>
         <button class="multiplier-btn active" data-mult="1">×1</button>
@@ -192,9 +206,9 @@
   </div>
 </div>
 
-<!-- Overlay selezione pace manuale -->
+<!-- Overlay pace manuale -->
 <div id="pace-input-overlay" class="hidden">
-  <div class="pace-input-card" id="pace-card">
+  <div class="pace-input-card">
     <h2>Imposta il tuo pace</h2>
     <div class="pace-dial">
       <button class="pace-dial-btn" id="dial-down">−</button>
@@ -205,8 +219,7 @@
   </div>
 </div>
 
-
-<!-- Overlay connessione sensore BLE/GPS (hidden di default, mostrato solo per BLE/GPS) -->
+<!-- Overlay connessione sensore BLE/GPS -->
 <div id="sensor-overlay" class="hidden">
   <div class="sensor-card">
     <h2 id="sensor-overlay-title">Connessione sensore</h2>
@@ -232,10 +245,19 @@ let route = null;
 let meta = null;
 let maplibreView = null;
 let streetView = null;
-let leafletMap = null;
-let leafletMarker = null;
+let pipMap = null;
+let pipMarker = null;
+let ytPlayer = null;
+let videoEl = null;
+let videoMeta = null;
 let isRoadMode = false;
 let maplibreLoaded = false;
+let prevEle = null;
+let totalElevGain = 0;
+let lastElevStrip = 0;
+let lfMap = null;
+let lfMarker = null;
+let currentSimDist = 0; // aggiornato da handleSimulatorUpdate, usato per risincronizzare il video
 
 // ---- Carica percorso ----
 async function init() {
@@ -253,186 +275,281 @@ async function init() {
     }
   }
 
-  if (!route) {
-    window.location.href = 'index.html';
-    return;
-  }
+  if (!route) { window.location.href = 'index.html'; return; }
 
   isRoadMode = meta.mode === 'road';
+  videoMeta = meta.video || null;
 
   document.getElementById('hud-route-name').textContent = meta.name;
   document.getElementById('hud-route-mode').textContent = isRoadMode ? '🏙 Road' : '🏔 Trail';
-  document.getElementById('stat-remaining').innerHTML = `${(route[route.length-1].dist_from_start/1000).toFixed(2)} <span class="unit">km</span>`;
+  document.getElementById('stat-remaining').innerHTML =
+    `${(route[route.length-1].dist_from_start/1000).toFixed(2)} <span class="unit">km</span>`;
 
   simulator.init(route);
   simulator.onUpdate(handleSimulatorUpdate);
 
-  initView();
+  await initView();
   initSensorOverlay();
   initControls();
-
-  // Aggiorna strip altimetrica iniziale
   renderElevationStrip(0);
 }
 
 // ---- Inizializza vista ----
 async function initView() {
-  if (isRoadMode) {
-    document.getElementById('street-view-wrap').style.display = 'flex';
-    document.getElementById('fallback-map-container').style.display = 'none';
+  // MapLibre sempre presente come sfondo
+  if (typeof maplibregl !== 'undefined') {
+    maplibreView = new MaplibreView();
+    try {
+      await maplibreView.init('maplibre-container', route, isRoadMode ? 'road' : 'offroad');
+      maplibreLoaded = true;
+      debug.log(`MapLibre pronto — ${isRoadMode ? 'road' : 'offroad'}`);
+    } catch (e) {
+      debug.warn('MapLibre fallback a Leaflet:', e);
+      initLeafletBg();
+    }
+  } else {
+    initLeafletBg();
+  }
+
+  if (videoMeta) {
+    // Modalità video: video in primo piano, PiP map in basso a sinistra
+    document.getElementById('video-view').style.display = 'block';
+    document.getElementById('pip-map-wrap').style.display = 'block';
+    document.getElementById('video-sync-badge').style.display = 'block';
+    initPipMap();
+    initVideoPlayer();
+  } else if (isRoadMode) {
+    // Road senza video: streetview overlay trasparente sopra MapLibre city
+    const svWrap = document.getElementById('street-view-wrap');
+    svWrap.style.display = 'flex';
+    svWrap.style.background = 'transparent';
     streetView = new StreetView();
     streetView.init(
       document.getElementById('street-view-img'),
-      document.getElementById('no-image-msg')
+      document.getElementById('no-image-badge'),
+      svWrap
     );
-    // Mappa Leaflet come fallback per road
-    initLeafletFallback();
-  } else {
-    // Modalità offroad: MapLibre 3D
-    document.getElementById('street-view-wrap').style.display = 'none';
-    document.getElementById('fallback-map-container').classList.add('visible');
+  }
+  // Trail senza video: solo MapLibre 3D satellite (nessun overlay)
+}
 
-    if (typeof maplibregl !== 'undefined') {
-      maplibreView = new MaplibreView();
-      try {
-        await maplibreView.init('maplibre-container', route);
-        maplibreLoaded = true;
-        debug.log('MapLibre 3D attivo');
-      } catch (e) {
-        debug.warn('MapLibre fallback a Leaflet:', e);
-        initLeafletFallback();
-      }
-    } else {
-      initLeafletFallback();
-    }
+function initLeafletBg() {
+  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const latlngs = route.map(p => [p.lat, p.lon]);
+  lfMap = L.map('maplibre-container', { zoomControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OSM', className: 'lf-bg-dark'
+  }).addTo(lfMap);
+  document.head.insertAdjacentHTML('beforeend',
+    '<style>.lf-bg-dark{filter:brightness(0.7)saturate(0.5)hue-rotate(180deg)invert(1)}</style>');
+  L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(lfMap);
+  const el = document.createElement('div');
+  el.style.cssText = `width:14px;height:14px;background:${color};border:3px solid white;border-radius:50%;`;
+  lfMarker = L.marker(latlngs[0], {
+    icon: L.divIcon({ html: el.outerHTML, className: '', iconSize: [14,14], iconAnchor: [7,7] })
+  }).addTo(lfMap);
+  lfMap.fitBounds(L.latLngBounds(latlngs), { padding: [40,40] });
+}
+
+// ---- PiP mini-map ----
+function initPipMap() {
+  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const latlngs = route.map(p => [p.lat, p.lon]);
+  pipMap = L.map('pip-map', { zoomControl: false, attributionControl: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    className: 'pip-dark'
+  }).addTo(pipMap);
+  document.head.insertAdjacentHTML('beforeend',
+    '<style>.pip-dark{filter:brightness(0.6)saturate(0.4)hue-rotate(180deg)invert(1)}</style>');
+  L.polyline(latlngs, { color, weight: 3, opacity: 0.8 }).addTo(pipMap);
+  const el = document.createElement('div');
+  el.style.cssText = `width:10px;height:10px;background:${color};border:2px solid white;border-radius:50%;`;
+  pipMarker = L.marker(latlngs[0], {
+    icon: L.divIcon({ html: el.outerHTML, className: '', iconSize: [10,10], iconAnchor: [5,5] })
+  }).addTo(pipMap);
+  pipMap.setView(latlngs[0], 14);
+}
+
+// ---- Video player ----
+function initVideoPlayer() {
+  if (!videoMeta) return;
+  if (videoMeta.type === 'youtube') {
+    loadYouTubePlayer(videoMeta.id);
+    startVideoResyncLoop();
+  } else if (videoMeta.type === 'mp4') {
+    videoEl = document.getElementById('mp4-player');
+    videoEl.src = videoMeta.url;
+    videoEl.style.display = 'block';
+    videoEl.play().catch(() => {});
   }
 }
 
-function initLeafletFallback() {
-  const container = isRoadMode ? 'leaflet-fallback' : 'maplibre-container';
-  const el = document.getElementById(container);
-  el.classList.add('visible');
-  el.style.display = 'block';
+function loadYouTubePlayer(videoId) {
+  const doInit = () => {
+    ytPlayer = new YT.Player('yt-player-wrap', {
+      videoId,
+      playerVars: { autoplay: 1, controls: 1, modestbranding: 1, rel: 0, iv_load_policy: 3 },
+      events: {
+        onReady: e => e.target.setPlaybackRate(1),
+        onStateChange: onYTStateChange
+      }
+    });
+  };
+  if (window.YT?.Player) { doInit(); return; }
+  window.onYouTubeIframeAPIReady = doInit;
+  const tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
 
-  leafletMap = L.map(el, { zoomControl: false });
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OSM', className: 'lf-dark'
-  }).addTo(leafletMap);
+function onYTStateChange(e) {
+  const badge = document.getElementById('video-sync-badge');
+  // State 3 = buffering (possibile inizio pubblicità o rebuffer di rete)
+  if (e.data === 3) {
+    if (badge) badge.textContent = '⏸ Caricamento…';
+    return;
+  }
+  // State 1 = playing: se arriviamo dallo stato buffering/pausa, risincronizzare
+  if (e.data === 1) {
+    // Piccolo delay per lasciar stabilizzare il player dopo la pubblicità
+    setTimeout(() => resyncVideoToRoute(true), 400);
+  }
+}
 
-  const style = document.createElement('style');
-  style.textContent = '.lf-dark { filter: brightness(0.7) saturate(0.5) hue-rotate(180deg) invert(1); }';
-  document.head.appendChild(style);
+// Risincronizza la posizione del video alla posizione attuale del runner.
+// forceSeek=true salta sempre se il drift è oltre soglia;
+// forceSeek=false (controllo periodico) usa soglia più alta per non disturbare la visione normale.
+function resyncVideoToRoute(forceSeek = false) {
+  if (!ytPlayer || !videoMeta?.durationSeconds) return;
+  const routeLen = route[route.length - 1].dist_from_start;
+  const expectedTime = (currentSimDist / routeLen) * videoMeta.durationSeconds;
+  let actualTime;
+  try { actualTime = ytPlayer.getCurrentTime(); } catch { return; }
 
-  const latlngs = route.map(p => [p.lat, p.lon]);
-  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
-  L.polyline(latlngs, { color, weight: 4, opacity: 0.85 }).addTo(leafletMap);
+  const drift = Math.abs(actualTime - expectedTime);
+  // Dopo un'interruzione pubblicitaria forziamo la risincronizzazione con soglia bassa (5s);
+  // nel controllo periodico usiamo 20s per non interrompere la visione se il runner
+  // ha cambiato passo di poco.
+  const threshold = forceSeek ? 5 : 20;
+  if (drift > threshold) {
+    try { ytPlayer.seekTo(expectedTime, true); } catch {}
+    debug.log(`Video risincronizzato: drift=${drift.toFixed(1)}s → seekTo ${expectedTime.toFixed(1)}s`);
+  }
 
-  const markerEl = document.createElement('div');
-  markerEl.style.cssText = 'width:14px;height:14px;background:var(--accent);border:3px solid white;border-radius:50%;';
-  leafletMarker = L.marker(latlngs[0], {
-    icon: L.divIcon({ html: markerEl.outerHTML, className: '', iconSize: [14,14], iconAnchor: [7,7] })
-  }).addTo(leafletMap);
+  const badge = document.getElementById('video-sync-badge');
+  if (badge && ytPlayer.getPlayerState?.() === 1) {
+    const rate = snapYTRate(Math.max(0.25, Math.min(2,
+      videoMeta.avgSpeedMs > 0 ? (currentSimDist > 0 ? 1 : 1) : 1)));
+    badge.textContent = `▶ ×${rate.toFixed(2)}`;
+  }
+}
 
-  leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+// Controllo periodico ogni 10 s: rete di sicurezza contro drift accumulato
+function startVideoResyncLoop() {
+  setInterval(() => {
+    if (videoMeta?.type === 'youtube' && ytPlayer?.getPlayerState?.() === 1) {
+      resyncVideoToRoute(false);
+    }
+  }, 10000);
+}
+
+const YT_RATES = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+function snapYTRate(rate) {
+  return YT_RATES.reduce((a, b) => Math.abs(b - rate) < Math.abs(a - rate) ? b : a);
+}
+
+function syncVideo(speedMs, currentDist) {
+  if (!videoMeta || !videoMeta.avgSpeedMs) return;
+  currentSimDist = currentDist; // aggiorna per uso in resyncVideoToRoute
+  const rate = Math.max(0.25, Math.min(2, speedMs / videoMeta.avgSpeedMs));
+  const badge = document.getElementById('video-sync-badge');
+
+  if (videoMeta.type === 'youtube' && ytPlayer?.setPlaybackRate) {
+    const snapped = snapYTRate(rate);
+    try { ytPlayer.setPlaybackRate(snapped); } catch {}
+    // Aggiorna badge solo se non mostra stato di caricamento/pubblicità
+    if (badge && !badge.textContent.startsWith('⏸')) {
+      badge.textContent = `▶ ×${snapped.toFixed(2)}`;
+    }
+  } else if (videoEl) {
+    videoEl.playbackRate = rate;
+    if (badge) badge.textContent = `▶ ×${rate.toFixed(2)}`;
+    // Risincronizza posizione MP4 su seek (tolleranza 3s)
+    if (videoMeta.durationSeconds > 0) {
+      const targetTime = (currentDist / route[route.length-1].dist_from_start) * videoMeta.durationSeconds;
+      if (Math.abs(videoEl.currentTime - targetTime) > 3) videoEl.currentTime = targetTime;
+    }
+  }
 }
 
 // ---- Overlay sensore ----
 function initSensorOverlay() {
   const sensorType = store.sensorType || 'manual-pace';
   const overlay = document.getElementById('sensor-overlay');
-  const title = document.getElementById('sensor-overlay-title');
-  const desc = document.getElementById('sensor-overlay-desc');
-  const btnConnect = document.getElementById('btn-sensor-connect');
-  const btnSkip = document.getElementById('btn-sensor-skip');
-  const status = document.getElementById('sensor-status');
-
   const LABELS = {
-    'ble-ftms': ['Connetti tapis roulant BLE', 'Premi il pulsante per cercare il tapis roulant Bluetooth nelle vicinanze.'],
-    'ble-hrm-rsc': ['Connetti foot pod BLE', 'Premi il pulsante per cercare il sensore scarpa (RSC) Bluetooth.'],
-    'gps': ['Attiva GPS', 'Simule utilizzerà il GPS del dispositivo per rilevare la velocità.'],
-    'pedometer': ['Attiva accelerometro', 'Simule utilizzerà il sensore di movimento del dispositivo per contare i passi.'],
-    'manual-pace': null,
-    'manual-speed': null
+    'ble-ftms':    ['Connetti tapis roulant BLE', 'Premi per cercare il tapis roulant Bluetooth nelle vicinanze.'],
+    'ble-hrm-rsc': ['Connetti foot pod BLE', 'Premi per cercare il sensore scarpa (RSC) Bluetooth.'],
+    'gps':         ['Attiva GPS', 'Simule utilizzerà il GPS del dispositivo per rilevare la velocità.'],
+    'pedometer':   ['Attiva accelerometro', 'Simule utilizzerà il sensore di movimento del dispositivo.']
   };
-
   const info = LABELS[sensorType];
 
   if (!info) {
-    // Input manuale: vai diretto alla selezione pace, senza overlay
     showManualInput(sensorType);
     return;
   }
 
-  // Sensore hardware: mostra overlay di connessione
   overlay.classList.remove('hidden');
-  title.textContent = info[0];
-  desc.textContent = info[1];
+  document.getElementById('sensor-overlay-title').textContent = info[0];
+  document.getElementById('sensor-overlay-desc').textContent = info[1];
 
-  btnConnect.addEventListener('click', async () => {
-    btnConnect.disabled = true;
+  document.getElementById('btn-sensor-connect').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-sensor-connect');
+    const status = document.getElementById('sensor-status');
+    btn.disabled = true;
     status.textContent = 'Connessione in corso…';
     try {
-      await sensors.connect(sensorType, getSensorOptions());
+      await sensors.connect(sensorType, { stride_length: store.getEffectiveStrideLength(), threshold: store.prefs.stride_threshold || 1.2 });
       sensors.onUpdate(handleSensorUpdate);
       overlay.classList.add('hidden');
       simulator.play();
-      status.textContent = '';
     } catch (e) {
       status.textContent = 'Errore: ' + (e.message || 'connessione fallita');
-      btnConnect.disabled = false;
-      debug.warn('Sensore errore:', e);
+      btn.disabled = false;
     }
   });
 
-  btnSkip.addEventListener('click', () => {
+  document.getElementById('btn-sensor-skip').addEventListener('click', () => {
     overlay.classList.add('hidden');
     showManualInput('manual-pace');
   });
 }
 
-function getSensorOptions() {
-  return {
-    stride_length: store.getEffectiveStrideLength(),
-    threshold: store.prefs.stride_threshold || 1.2
-  };
-}
-
-// ---- Input manuale ----
 function showManualInput(type) {
-  if (type === 'manual-pace') {
-    showPaceInput();
-  } else if (type === 'manual-speed') {
-    showSpeedInput();
-  }
+  if (type === 'manual-speed') { showPaceInput(); return; }
+  showPaceInput();
 }
 
 function showPaceInput() {
   const overlay = document.getElementById('pace-input-overlay');
   overlay.classList.remove('hidden');
-
   let paceS = store.prefs.manual_pace_s || 360;
 
   function updateDial() {
-    const min = Math.floor(paceS / 60);
-    const sec = paceS % 60;
+    const min = Math.floor(paceS / 60), sec = paceS % 60;
     document.getElementById('dial-value').textContent = `${min}:${sec.toString().padStart(2,'0')}`;
   }
   updateDial();
 
   function makeAdjuster(btn, delta) {
-    let pressTimer = null, intervalId = null;
+    let pt = null, iv = null;
     btn.addEventListener('pointerdown', () => {
-      paceS = Math.max(180, Math.min(900, paceS + delta));
-      updateDial();
-      pressTimer = setTimeout(() => {
-        intervalId = setInterval(() => {
-          paceS = Math.max(180, Math.min(900, paceS + delta));
-          updateDial();
-        }, 150);
-      }, 500);
+      paceS = Math.max(180, Math.min(900, paceS + delta)); updateDial();
+      pt = setTimeout(() => { iv = setInterval(() => { paceS = Math.max(180, Math.min(900, paceS + delta)); updateDial(); }, 150); }, 500);
     });
-    btn.addEventListener('pointerup', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
-    btn.addEventListener('pointerleave', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+    const stop = () => { clearTimeout(pt); clearInterval(iv); };
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
   }
 
   makeAdjuster(document.getElementById('dial-down'), 5);
@@ -449,57 +566,34 @@ function showPaceInput() {
   });
 }
 
-function showSpeedInput() {
-  // Usa manual-pace come fallback semplificato
-  showPaceInput();
-}
-
-// ---- Aggiornamento sensore → simulator ----
 function handleSensorUpdate(data) {
   simulator.setSpeed(data.speed_ms);
   updatePaceLiveDisplay(data.pace_min_km);
 }
 
 function updatePaceLiveDisplay(paceMinKm) {
-  const paceEl = document.getElementById('pace-live');
-  if (!paceEl) return;
+  const el = document.getElementById('pace-live');
+  if (!el) return;
   const p = paceMinKm || (store.prefs.manual_pace_s / 60);
-  const min = Math.floor(p);
-  const sec = Math.round((p - min) * 60);
-  paceEl.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  const min = Math.floor(p), sec = Math.round((p - min) * 60);
+  el.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
 }
 
-// ---- Tracking dislivello accumulato ----
-let prevEle = null;
-let totalElevGain = 0;
-
 // ---- Aggiornamento HUD dal simulator ----
-let lastElevStrip = 0;
-
 function handleSimulatorUpdate(state) {
   const { current_dist, remaining_dist, current_point, next_point, heading,
-          current_grade, lookahead_grade, speed_ms, pace_min_km, total_dist } = state;
+          current_grade, lookahead_grade, speed_ms, pace_min_km } = state;
 
   // Dislivello positivo accumulato
-  if (prevEle !== null) {
-    const diff = current_point.ele - prevEle;
-    if (diff > 0) totalElevGain += diff;
-  }
+  if (prevEle !== null && current_point.ele > prevEle) totalElevGain += current_point.ele - prevEle;
   prevEle = current_point.ele;
 
   // Pendenza
   const gradeEl = document.getElementById('hud-grade');
-  const sign = current_grade >= 0 ? '+' : '';
-  gradeEl.textContent = `${sign}${current_grade.toFixed(1)}%`;
+  gradeEl.textContent = `${current_grade >= 0 ? '+' : ''}${current_grade.toFixed(1)}%`;
+  gradeEl.className = 'grade-value ' + (current_grade < 0 ? 'grade-down' : current_grade < 5 ? 'grade-flat' : current_grade < 10 ? 'grade-mid' : 'grade-high');
 
-  // Classe colore pendenza
-  gradeEl.className = 'grade-value';
-  if (current_grade < 0) gradeEl.classList.add('grade-down');
-  else if (current_grade < 5) gradeEl.classList.add('grade-flat');
-  else if (current_grade < 10) gradeEl.classList.add('grade-mid');
-  else gradeEl.classList.add('grade-high');
-
-  // Lookahead alert
+  // Lookahead
   const alertEl = document.getElementById('hud-lookahead');
   if (lookahead_grade) {
     alertEl.textContent = `⚠ +${lookahead_grade.grade}% tra ${lookahead_grade.dist_from_here}m`;
@@ -515,113 +609,103 @@ function handleSimulatorUpdate(state) {
   document.getElementById('stat-elev-gain').innerHTML = `+${Math.round(totalElevGain)} <span class="unit">m</span>`;
 
   if (pace_min_km > 0) {
-    const min = Math.floor(pace_min_km);
-    const sec = Math.round((pace_min_km - min) * 60);
+    const min = Math.floor(pace_min_km), sec = Math.round((pace_min_km - min) * 60);
     document.getElementById('stat-pace').innerHTML = `${min}:${sec.toString().padStart(2,'0')} <span class="unit">/km</span>`;
   }
 
-  // Strip altimetrica ogni 500m
+  // Strip altimetrica ogni 250m
   if (Math.abs(current_dist - lastElevStrip) > 250) {
     renderElevationStrip(current_dist);
     lastElevStrip = current_dist;
   }
 
-  // Aggiorna vista principale
-  if (isRoadMode && streetView) {
-    streetView.update({ current_point, heading }).catch(() => {});
-  } else if (!isRoadMode) {
+  // Traccia posizione corrente (usata da resyncVideoToRoute anche quando speed=0)
+  currentSimDist = current_dist;
+
+  // Vista principale
+  if (videoMeta && speed_ms > 0) {
+    syncVideo(speed_ms, current_dist);
+  }
+
+  if (videoMeta && pipMarker && pipMap) {
+    const ll = [current_point.lat, current_point.lon];
+    pipMarker.setLatLng(ll);
+    pipMap.setView(ll, 14);
+  }
+
+  if (!videoMeta) {
+    if (isRoadMode && streetView) {
+      streetView.update({ current_point, heading }).catch(() => {});
+    }
     if (maplibreLoaded && maplibreView) {
       maplibreView.update({ current_point, next_point, heading });
-    } else if (leafletMap && leafletMarker) {
+    } else if (lfMap && lfMarker) {
       const ll = [current_point.lat, current_point.lon];
-      leafletMarker.setLatLng(ll);
-      leafletMap.setView(ll, leafletMap.getZoom());
+      lfMarker.setLatLng(ll);
+      lfMap.setView(ll, lfMap.getZoom());
     }
   }
 }
 
-// ---- Strip altimetrica SVG ----
+// ---- Strip altimetrica SVG (con larghezza reale in pixel) ----
 function renderElevationStrip(fromDist) {
   const svg = document.getElementById('elevation-strip-svg');
+  // Usa la larghezza reale in pixel per evitare scaling del testo
+  const W = Math.round(svg.getBoundingClientRect().width) || 600;
+  const H = 100;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
   const WINDOW = 5000;
   const totalRoute = route[route.length - 1].dist_from_start;
   const profile = buildElevationProfile(route, fromDist, WINDOW);
   if (profile.length < 2) return;
 
   const eles = profile.map(p => p.ele);
-  const minE = Math.min(...eles);
-  const maxE = Math.max(...eles);
-  // Range minimo 30m per evitare schiacciamento su terreni piatti
+  const minE = Math.min(...eles), maxE = Math.max(...eles);
   const range = Math.max(maxE - minE, 30);
 
-  const W = 600, H = 100;
-  const PX = 6;          // padding laterale
-  const PY_TOP = 22;     // spazio per label picchi
-  const PY_BOT = 18;     // spazio per label km
+  const PX = 6, PY_TOP = 22, PY_BOT = 18;
   const plotH = H - PY_TOP - PY_BOT;
 
-  const toX = (i) => PX + (i / (profile.length - 1)) * (W - PX * 2);
-  const toY = (ele) => PY_TOP + plotH - ((ele - minE) / range) * plotH;
+  const toX = i => PX + (i / (profile.length - 1)) * (W - PX * 2);
+  const toY = ele => PY_TOP + plotH - ((ele - minE) / range) * plotH;
 
   const pts = profile.map((p, i) => `${toX(i).toFixed(1)},${toY(p.ele).toFixed(1)}`);
   const pathD = `M${pts.join('L')}`;
   const fillD = `${pathD}L${(W - PX).toFixed(1)},${H}L${PX},${H}Z`;
-
   const color = isRoadMode ? '#00b8ff' : '#00e5a0';
 
-  // ---- Picchi (massimi locali significativi) ----
+  // Picchi
   const peaks = findElevationPeaks(eles, 0.2);
-
-  // ---- Label km ogni ~1km (max 5 label) ----
-  const kmLabelInterval = Math.ceil(WINDOW / 1000 / 5) * 1000;
-  const kmLabels = [];
-  for (let d = kmLabelInterval; d < WINDOW - 200; d += kmLabelInterval) {
-    const frac = d / WINDOW;
-    const idx = Math.round(frac * (profile.length - 1));
-    const kmVal = ((fromDist + d) / 1000).toFixed(1);
-    kmLabels.push({ x: toX(idx), label: `${kmVal}km` });
-  }
-
-  // ---- Traguardo (se nel range visibile) ----
-  let finishSVG = '';
-  const remainingInWindow = totalRoute - fromDist;
-  if (remainingInWindow > 0 && remainingInWindow <= WINDOW) {
-    const frac = remainingInWindow / WINDOW;
-    const idx = Math.round(frac * (profile.length - 1));
-    const fx = toX(Math.min(idx, profile.length - 1));
-    const fy = toY(eles[Math.min(idx, eles.length - 1)]);
-    finishSVG = `
-      <line x1="${fx}" y1="${fy}" x2="${fx}" y2="${H - PY_BOT}" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"/>
-      <text x="${fx + 3}" y="${PY_TOP - 4}" fill="#ff4444" font-size="9" font-family="Barlow Condensed, sans-serif" font-weight="700">ARRIVO</text>
-    `;
-  }
-
-  // ---- Cursore posizione attuale ----
-  const curX = PX;
-  const curY = toY(eles[0]);
-
-  // ---- Assembla SVG ----
   const peaksSVG = peaks.map(pk => {
-    const x = toX(pk.idx);
-    const y = toY(eles[pk.idx]);
-    return `
-      <circle cx="${x}" cy="${y}" r="2.5" fill="${color}" opacity="0.8"/>
-      <text x="${x}" y="${y - 5}" fill="${color}" font-size="9" font-family="Barlow Condensed, sans-serif"
-            font-weight="700" text-anchor="middle" opacity="0.9">${Math.round(eles[pk.idx])}m</text>
-    `;
+    const x = toX(pk.idx), y = toY(eles[pk.idx]);
+    return `<circle cx="${x}" cy="${y}" r="2.5" fill="${color}" opacity="0.8"/>
+    <text x="${x}" y="${y - 5}" fill="${color}" font-size="9" font-family="Barlow Condensed,sans-serif" font-weight="700" text-anchor="middle" opacity="0.9">${Math.round(eles[pk.idx])}m</text>`;
   }).join('');
 
-  const kmLabelsSVG = kmLabels.map(kl => `
-    <line x1="${kl.x}" y1="${H - PY_BOT}" x2="${kl.x}" y2="${H - PY_BOT + 4}" stroke="${color}" stroke-width="1" opacity="0.4"/>
-    <text x="${kl.x}" y="${H - 4}" fill="#5a6878" font-size="9" font-family="Barlow Condensed, sans-serif"
-          text-anchor="middle">${kl.label}</text>
-  `).join('');
+  // Label km
+  const kmInterval = Math.ceil(WINDOW / 1000 / 5) * 1000;
+  const kmLabelsSVG = [];
+  for (let d = kmInterval; d < WINDOW - 200; d += kmInterval) {
+    const idx = Math.round((d / WINDOW) * (profile.length - 1));
+    const x = toX(idx);
+    const kmVal = ((fromDist + d) / 1000).toFixed(1);
+    kmLabelsSVG.push(`<line x1="${x}" y1="${H - PY_BOT}" x2="${x}" y2="${H - PY_BOT + 4}" stroke="${color}" stroke-width="1" opacity="0.4"/>
+    <text x="${x}" y="${H - 4}" fill="#5a6878" font-size="9" font-family="Barlow Condensed,sans-serif" text-anchor="middle">${kmVal}km</text>`);
+  }
 
-  // Label quota corrente a sinistra
-  const curEleLabel = `
-    <text x="${curX + 10}" y="${curY - 5}" fill="white" font-size="9" font-family="Barlow Condensed, sans-serif"
-          font-weight="700" opacity="0.9">${Math.round(eles[0])}m</text>
-  `;
+  // Traguardo
+  let finishSVG = '';
+  const remainInWindow = totalRoute - fromDist;
+  if (remainInWindow > 0 && remainInWindow <= WINDOW) {
+    const idx = Math.min(Math.round((remainInWindow / WINDOW) * (profile.length - 1)), profile.length - 1);
+    const fx = toX(idx), fy = toY(eles[idx]);
+    finishSVG = `<line x1="${fx}" y1="${fy}" x2="${fx}" y2="${H - PY_BOT}" stroke="#ff4444" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"/>
+    <text x="${fx + 3}" y="${PY_TOP - 4}" fill="#ff4444" font-size="9" font-family="Barlow Condensed,sans-serif" font-weight="700">ARRIVO</text>`;
+  }
+
+  // Cursore + quota corrente
+  const curX = PX, curY = toY(eles[0]);
 
   svg.innerHTML = `
     <defs>
@@ -633,9 +717,9 @@ function renderElevationStrip(fromDist) {
     <path d="${fillD}" fill="url(#sg)"/>
     <path d="${pathD}" fill="none" stroke="${color}" stroke-width="1.8"/>
     ${peaksSVG}
-    ${kmLabelsSVG}
+    ${kmLabelsSVG.join('')}
     ${finishSVG}
-    ${curEleLabel}
+    <text x="${curX + 10}" y="${curY - 5}" fill="white" font-size="9" font-family="Barlow Condensed,sans-serif" font-weight="700" opacity="0.9">${Math.round(eles[0])}m</text>
     <circle cx="${curX}" cy="${curY}" r="5" fill="${color}" stroke="white" stroke-width="2.5">
       <animate attributeName="r" values="5;7;5" dur="1.5s" repeatCount="indefinite"/>
     </circle>
@@ -646,16 +730,13 @@ function findElevationPeaks(eles, minRelativeHeight = 0.2) {
   const minE = Math.min(...eles), maxE = Math.max(...eles);
   const threshold = minE + (maxE - minE) * minRelativeHeight;
   const peaks = [];
-
   for (let i = 3; i < eles.length - 3; i++) {
     if (eles[i] < threshold) continue;
-    const isLocalMax = eles[i] > eles[i-1] && eles[i] > eles[i+1]
-                    && eles[i] >= eles[i-2] && eles[i] >= eles[i+2];
-    if (isLocalMax) peaks.push({ idx: i, ele: eles[i] });
+    if (eles[i] > eles[i-1] && eles[i] > eles[i+1] && eles[i] >= eles[i-2] && eles[i] >= eles[i+2]) {
+      peaks.push({ idx: i });
+    }
   }
-
-  // Tieni al massimo 3 picchi, separati da almeno il 15% della lunghezza
-  peaks.sort((a, b) => b.ele - a.ele);
+  peaks.sort((a, b) => eles[b.idx] - eles[a.idx]);
   const minSep = Math.floor(eles.length * 0.15);
   const filtered = [];
   for (const pk of peaks) {
@@ -674,71 +755,58 @@ function initControls() {
     sensors.disconnect();
     window.location.href = 'preview.html';
   });
-
-  document.getElementById('btn-rewind').addEventListener('click', () => {
-    simulator.seekBy(-500);
-  });
-
-  document.getElementById('btn-forward').addEventListener('click', () => {
-    simulator.seekBy(500);
-  });
+  document.getElementById('btn-rewind').addEventListener('click', () => simulator.seekBy(-500));
+  document.getElementById('btn-forward').addEventListener('click', () => simulator.seekBy(500));
 
   const btnPlay = document.getElementById('btn-play');
   btnPlay.addEventListener('click', () => {
     simulator.toggle();
     btnPlay.textContent = simulator.isPlaying() ? '⏸' : '▶';
+    if (videoMeta) {
+      if (ytPlayer?.playVideo) simulator.isPlaying() ? ytPlayer.playVideo() : ytPlayer.pauseVideo();
+      if (videoEl) simulator.isPlaying() ? videoEl.play() : videoEl.pause();
+    }
   });
 
-  // Multiplier
   document.querySelectorAll('.multiplier-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const mult = parseFloat(btn.dataset.mult);
-      simulator.setMultiplier(mult);
+      simulator.setMultiplier(parseFloat(btn.dataset.mult));
       document.querySelectorAll('.multiplier-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
 
-  // Pace controls live (modalità manuale)
   function makePaceBtn(btn, delta) {
-    let pressTimer = null, intervalId = null;
+    let pt = null, iv = null;
     btn.addEventListener('pointerdown', () => {
-      sensors.adjustPace(delta);
-      updatePaceLiveDisplay();
-      pressTimer = setTimeout(() => {
-        intervalId = setInterval(() => {
-          sensors.adjustPace(delta);
-          updatePaceLiveDisplay();
-        }, 300);
-      }, 600);
+      sensors.adjustPace(delta); updatePaceLiveDisplay();
+      pt = setTimeout(() => { iv = setInterval(() => { sensors.adjustPace(delta); updatePaceLiveDisplay(); }, 300); }, 600);
     });
-    btn.addEventListener('pointerup', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
-    btn.addEventListener('pointerleave', () => { clearTimeout(pressTimer); clearInterval(intervalId); });
+    const stop = () => { clearTimeout(pt); clearInterval(iv); };
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointerleave', stop);
   }
-
   makePaceBtn(document.getElementById('btn-pace-down'), 5);
   makePaceBtn(document.getElementById('btn-pace-up'), -5);
 
-  // Tasto spazio = play/pause
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', e => {
     if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
       e.preventDefault();
       simulator.toggle();
       btnPlay.textContent = simulator.isPlaying() ? '⏸' : '▶';
     }
     if (e.code === 'ArrowRight') simulator.seekBy(100);
-    if (e.code === 'ArrowLeft') simulator.seekBy(-100);
+    if (e.code === 'ArrowLeft')  simulator.seekBy(-100);
   });
 }
 
 // ---- MapLibre lazy load ----
 async function loadMapLibre() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (typeof maplibregl !== 'undefined') { resolve(); return; }
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.js';
-    script.onload = resolve;
-    script.onerror = resolve;
+    script.onload = resolve; script.onerror = resolve;
     document.head.appendChild(script);
     const link = document.createElement('link');
     link.rel = 'stylesheet';
