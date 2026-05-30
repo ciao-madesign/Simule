@@ -113,16 +113,6 @@
       </div>
 
       <div class="form-group">
-        <label>Tipo percorso</label>
-        <div class="radio-group" id="route-type-group">
-          <label class="radio-option" data-val="loop"><input type="radio" name="route_type" value="loop">🔄 Anello</label>
-          <label class="radio-option" data-val="out-and-back"><input type="radio" name="route_type" value="out-and-back">↩ A/R</label>
-          <label class="radio-option" data-val="point-to-point"><input type="radio" name="route_type" value="point-to-point">→ P a P</label>
-        </div>
-        <span class="form-hint">Anello: partenza = arrivo · A/R: stesso percorso nei due sensi · P a P: start e finish diversi</span>
-      </div>
-
-      <div class="form-group">
         <label for="c-surface">Fondo stradale</label>
         <select id="c-surface">
           <option value="">— Opzionale —</option>
@@ -396,15 +386,6 @@ function showGpxInfo() {
   }
 }
 
-// ---- Route type radio ----
-document.querySelectorAll('#route-type-group .radio-option').forEach(opt => {
-  opt.addEventListener('click', () => {
-    document.querySelectorAll('#route-type-group .radio-option').forEach(o => o.classList.remove('selected'));
-    opt.classList.add('selected');
-    opt.querySelector('input').checked = true;
-  });
-});
-
 // ---- Tag checkboxes ----
 document.querySelectorAll('.tag-check').forEach(lbl => {
   lbl.addEventListener('click', () => lbl.classList.toggle('checked'));
@@ -458,8 +439,6 @@ function submit() {
   const city = document.getElementById('c-city').value.trim() || null;
   const surface = document.getElementById('c-surface').value || null;
   const tags = Array.from(document.querySelectorAll('.tag-check.checked input')).map(i => i.value);
-  const routeTypeEl = document.querySelector('#route-type-group .radio-option.selected');
-  const route_type = routeTypeEl ? routeTypeEl.dataset.val : null;
   const author = document.getElementById('c-author').value.trim() || null;
   const license = document.querySelector('#license-group .radio-option.selected input').value;
   const videoUrl = document.getElementById('c-video-url').value.trim();
@@ -477,7 +456,7 @@ function submit() {
 
   const entry = {
     _user: true,
-    name, mode, route_type,
+    name, mode,
     area_country: country,
     area_region: region,
     area_city: city,
