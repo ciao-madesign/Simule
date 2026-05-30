@@ -1164,8 +1164,75 @@ input:focus, select:focus {
 
 @media (max-width: 480px) {
   .index-main { padding: 24px 16px; }
-  .grade-value { font-size: 52px; }
-  .hud-stats { top: auto; bottom: 140px; right: 12px; }
+
+  /* Topbar: compact */
+  .hud-topbar { padding: 8px 12px; }
+  .hud-route-name {
+    font-size: 12px;
+    max-width: 130px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .hud-route-mode { font-size: 9px; }
+
+  /* Grade: move from vertical-center to just below topbar */
+  .hud-grade {
+    top: 46px;
+    left: 12px;
+    transform: none;
+  }
+  .grade-value { font-size: 36px; }
+  .grade-label { font-size: 10px; }
+
+  /* Lookahead: position below grade block */
+  .hud-lookahead {
+    top: 100px;
+    left: 12px;
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  /* Stats: compact card, top-right, smaller text */
+  .hud-stats {
+    top: 46px;
+    right: 8px;
+    min-width: 0;
+    width: auto;
+    padding: 8px 10px;
+    gap: 5px;
+  }
+  .hud-stat-value { font-size: 16px; }
+  .hud-stat-value .unit { font-size: 10px; }
+  .hud-stat-label { font-size: 9px; }
+
+  /* Elevation strip: full width, shorter */
+  .hud-elevation {
+    left: 0;
+    right: 0;
+    max-width: 100vw;
+    bottom: 72px;
+    padding: 0 12px;
+  }
+  #elevation-strip-svg { height: 70px; }
+
+  /* Controls bar: tighter */
+  .hud-controls { padding: 8px 12px; gap: 5px; }
+  .ctrl-btn { width: 40px; height: 40px; font-size: 17px; }
+  .ctrl-btn.play-pause { width: 48px; height: 48px; font-size: 19px; }
+  .multiplier-btn { height: 36px; min-width: 36px; font-size: 14px; padding: 0 8px; }
+
+  /* Pace buttons: smaller touch targets */
+  .pace-adj-btn { width: 60px; height: 60px; }
+  .pace-adj-btn .pace-delta { font-size: 10px; }
+  .pace-display { font-size: 26px; min-width: 72px; }
+
+  /* Zoom controls: smaller */
+  #zoom-controls { right: 8px; gap: 3px; }
+  .zoom-btn { width: 32px; height: 32px; font-size: 17px; border-radius: 6px; }
+
+  /* Waypoint photo: reposition so it doesn't clash with elevation strip */
+  #waypoint-photo { bottom: 150px; right: 12px; width: 200px; height: 126px; }
 }
 
 /* ---- Avatar picker ---- */
