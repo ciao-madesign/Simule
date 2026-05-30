@@ -93,8 +93,14 @@
         <button class="filter-chip" data-f="diff" data-v="3">🟠 Difficile</button>
         <button class="filter-chip" data-f="diff" data-v="4">🔴 Esperto</button>
       </div>
+      <div class="filter-group">
+        <button class="filter-chip active" data-f="rtype" data-v="">Percorso</button>
+        <button class="filter-chip" data-f="rtype" data-v="loop">🔄 Anello</button>
+        <button class="filter-chip" data-f="rtype" data-v="out-and-back">↩ A/R</button>
+        <button class="filter-chip" data-f="rtype" data-v="point-to-point">→ P a P</button>
+      </div>
       <div class="filter-group filter-search">
-        <input type="search" id="catalog-search" placeholder="Cerca area o nome…" autocomplete="off">
+        <input type="search" id="catalog-search" placeholder="Cerca per area o nome…" autocomplete="off">
       </div>
     </div>
 
@@ -264,7 +270,14 @@ function escHtml(s) {
 }
 
 // ---- Catalogo ----
-const DIFF_LABEL = { 1:'🟢 Facile', 2:'🟡 Moderata', 3:'🟠 Difficile', 4:'🔴 Esperto' };
+const DIFF_LABEL       = { 1:'🟢 Facile', 2:'🟡 Moderata', 3:'🟠 Difficile', 4:'🔴 Esperto' };
+const ROUTE_TYPE_LABEL = { loop:'🔄 Anello', 'out-and-back':'↩ A/R', 'point-to-point':'→ P a P' };
+
+function fmtTime(min) {
+  if (!min) return null;
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? (m ? `${h}h ${m}min` : `${h}h`) : `${m}min`;
+}
 
 let _catalogCache = null;
 async function fetchCatalog() {
@@ -277,7 +290,7 @@ async function fetchCatalog() {
 }
 
 // ---- Filtri catalogo ----
-const activeFilters = { mode: '', diff: '', search: '' };
+const activeFilters = { mode: '', diff: '', rtype: '', search: '' };
 
 document.querySelectorAll('.filter-chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -298,8 +311,9 @@ async function applyFilters() {
   const catalog = await fetchCatalog();
   const allEntries = [...catalog, ...loadUserCatalog()];
   const filtered = allEntries.filter(entry => {
-    if (activeFilters.mode && entry.mode !== activeFilters.mode) return false;
-    if (activeFilters.diff && entry.difficulty !== parseInt(activeFilters.diff)) return false;
+    if (activeFilters.mode  && entry.mode       !== activeFilters.mode)              return false;
+    if (activeFilters.diff  && entry.difficulty !== parseInt(activeFilters.diff))    return false;
+    if (activeFilters.rtype && entry.route_type !== activeFilters.rtype)             return false;
     if (activeFilters.search) {
       const hay = [entry.name, entry.area_city, entry.area_region, entry.area_country, ...(entry.tags || [])].join(' ').toLowerCase();
       if (!hay.includes(activeFilters.search)) return false;
@@ -334,12 +348,16 @@ function renderCatalog(entries) {
     const userBadge = entry._user ? '<span class="catalog-user-badge">Tu</span>' : '';
     const diffLabel = DIFF_LABEL[entry.difficulty] || '';
     const area = [entry.area_city, entry.area_region, entry.area_country].filter(Boolean).join(', ');
+    const rtLabel  = entry.route_type ? (ROUTE_TYPE_LABEL[entry.route_type] || entry.route_type) : null;
+    const timeStr  = fmtTime(entry.estimated_time_min);
+    const distStr  = entry.distance_km != null ? `${entry.distance_km.toFixed(0)} km` : null;
+    const gainStr  = entry.elevation_gain != null ? `+${entry.elevation_gain}m` : null;
     card.innerHTML = `
       <div class="catalog-card-header">
         <div class="route-item-icon ${modeCls}" style="width:40px;height:40px;font-size:20px">${modeIcon}</div>
         <div style="flex:1;min-width:0">
           <div class="catalog-card-name">${escHtml(entry.name)}</div>
-          <div class="catalog-card-region">${escHtml(area || entry.region || '')}</div>
+          <div class="catalog-card-region">${escHtml(area)}</div>
         </div>
         ${videoBadge}${userBadge}
       </div>
@@ -347,9 +365,11 @@ function renderCatalog(entries) {
       <div class="catalog-card-footer">
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <span class="badge badge-${modeCls === 'road' ? 'road' : 'trail'}">${modeLabel}</span>
-          ${diffLabel ? `<span class="badge badge-diff">${diffLabel}</span>` : ''}
-          ${entry.distance_km ? `<span class="badge badge-stat">${entry.distance_km.toFixed(0)} km</span>` : ''}
-          ${entry.elevation_gain ? `<span class="badge badge-stat">+${entry.elevation_gain}m</span>` : ''}
+          ${diffLabel  ? `<span class="badge badge-diff">${diffLabel}</span>`    : ''}
+          ${rtLabel    ? `<span class="badge badge-stat">${rtLabel}</span>`      : ''}
+          ${distStr    ? `<span class="badge badge-stat">${distStr}</span>`      : ''}
+          ${gainStr    ? `<span class="badge badge-stat">${gainStr}</span>`      : ''}
+          ${timeStr    ? `<span class="badge badge-stat">~${timeStr}</span>`     : ''}
         </div>
         <span class="catalog-card-action">Carica →</span>
       </div>`;

@@ -80,7 +80,7 @@
           <input type="text" id="c-country" placeholder="es. Italia" maxlength="60">
         </div>
         <div class="form-group">
-          <label for="c-region">Regione / Stato <span style="color:var(--danger)">*</span></label>
+          <label for="c-region">Regione / Stato</label>
           <input type="text" id="c-region" placeholder="es. Piemonte" maxlength="60">
         </div>
       </div>
@@ -110,6 +110,16 @@
             <option value="4">🔴 Esperto</option>
           </select>
         </div>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo percorso</label>
+        <div class="radio-group" id="route-type-group">
+          <label class="radio-option" data-val="loop"><input type="radio" name="route_type" value="loop">🔄 Anello</label>
+          <label class="radio-option" data-val="out-and-back"><input type="radio" name="route_type" value="out-and-back">↩ A/R</label>
+          <label class="radio-option" data-val="point-to-point"><input type="radio" name="route_type" value="point-to-point">→ P a P</label>
+        </div>
+        <span class="form-hint">Anello: partenza = arrivo · A/R: stesso percorso nei due sensi · P a P: start e finish diversi</span>
       </div>
 
       <div class="form-group">
@@ -361,11 +371,39 @@ async function loadFromUrl() {
   finally { hideLoading(); }
 }
 
+function validateGpxData(meta) {
+  if (meta.distance_km < 0.5)   return `Distanza troppo breve: ${meta.distance_km.toFixed(2)} km. Verifica che il file contenga un percorso completo.`;
+  if (meta.distance_km > 300)   return `Distanza anomala: ${meta.distance_km.toFixed(0)} km (max 300 km). Verifica il file GPX.`;
+  if (meta.elevation_gain < 0)  return `Dislivello positivo negativo (${meta.elevation_gain}m) — file GPX non valido.`;
+  if (meta.elevation_gain > 8000) return `Dislivello anomalo: +${meta.elevation_gain}m (max 8000 m). Verifica il file GPX.`;
+  if (meta.elevation_loss < 0)  return `Dislivello negativo anomalo (${meta.elevation_loss}m) — file GPX non valido.`;
+  if (meta.max_elevation != null && (meta.max_elevation < -500 || meta.max_elevation > 8849))
+    return `Quota massima anomala: ${meta.max_elevation}m (atteso tra -500 m e 8849 m).`;
+  return null;
+}
+
 function showGpxInfo() {
   const el = document.getElementById('gpx-loaded-info');
+  const err = validateGpxData(parsedMeta);
   el.style.display = '';
-  el.innerHTML = `✅ Tracciato caricato: <strong>${parsedPoints.length} punti</strong> · <strong>${parsedMeta.distance_km.toFixed(2)} km</strong> · <strong>+${parsedMeta.elevation_gain}m</strong>`;
+  if (err) {
+    el.style.cssText = 'display:;padding:12px 16px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.3);border-radius:8px;font-size:13px;color:var(--danger);margin-top:16px';
+    el.innerHTML = `⚠ ${err}`;
+  } else {
+    el.style.cssText = 'display:;padding:12px 16px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2);border-radius:8px;font-size:13px;color:var(--accent);margin-top:16px';
+    const lossStr = parsedMeta.elevation_loss != null ? ` · <strong>-${Math.round(parsedMeta.elevation_loss)}m</strong>` : '';
+    el.innerHTML = `✅ Tracciato caricato: <strong>${parsedPoints.length} punti</strong> · <strong>${parsedMeta.distance_km.toFixed(2)} km</strong> · <strong>+${Math.round(parsedMeta.elevation_gain)}m</strong>${lossStr}`;
+  }
 }
+
+// ---- Route type radio ----
+document.querySelectorAll('#route-type-group .radio-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('#route-type-group .radio-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    opt.querySelector('input').checked = true;
+  });
+});
 
 // ---- Tag checkboxes ----
 document.querySelectorAll('.tag-check').forEach(lbl => {
@@ -406,17 +444,23 @@ function submit() {
   const desc = document.getElementById('c-desc').value.trim();
 
   if (!name) { showToast('Inserisci il nome del percorso', 'error'); return; }
-  if (!country || !region) { showToast('Inserisci paese e regione', 'error'); return; }
+  if (!country) { showToast('Inserisci almeno il paese', 'error'); return; }
   if (!mode) { showToast('Seleziona la tipologia del percorso', 'error'); return; }
   if (!difficulty) { showToast('Seleziona la difficoltà', 'error'); return; }
   if (!desc) { showToast('Aggiungi una descrizione', 'error'); return; }
   if (!document.getElementById('consent-rights').checked) { showToast('Devi confermare i diritti sul contenuto', 'error'); return; }
   if (!document.getElementById('consent-privacy').checked) { showToast('Devi accettare l\'avviso sulla privacy', 'error'); return; }
 
-  const city = document.getElementById('c-city').value.trim();
-  const surface = document.getElementById('c-surface').value;
+  const gpxErr = validateGpxData(parsedMeta);
+  if (gpxErr) { showToast(gpxErr, 'error'); return; }
+
+  const region = document.getElementById('c-region').value.trim() || null;
+  const city = document.getElementById('c-city').value.trim() || null;
+  const surface = document.getElementById('c-surface').value || null;
   const tags = Array.from(document.querySelectorAll('.tag-check.checked input')).map(i => i.value);
-  const author = document.getElementById('c-author').value.trim();
+  const routeTypeEl = document.querySelector('#route-type-group .radio-option.selected');
+  const route_type = routeTypeEl ? routeTypeEl.dataset.val : null;
+  const author = document.getElementById('c-author').value.trim() || null;
   const license = document.querySelector('#license-group .radio-option.selected input').value;
   const videoUrl = document.getElementById('c-video-url').value.trim();
   const videoSpeed = parseFloat(document.getElementById('c-video-speed').value) || null;
@@ -425,19 +469,29 @@ function submit() {
   if (videoUrl) {
     const ytId = extractYouTubeId(videoUrl);
     if (!ytId) { showToast('URL YouTube non valido', 'error'); return; }
-    if (videoUrl && !videoSpeed) { showToast('Inserisci la velocità media del video', 'error'); return; }
+    if (!videoSpeed) { showToast('Inserisci la velocità media del video', 'error'); return; }
     video = { type: 'youtube', id: ytId, avgSpeedMs: videoSpeed / 3.6, durationSeconds: null };
   }
 
+  const estimated_time_min = Math.round(parsedMeta.distance_km * 6 + (parsedMeta.elevation_gain || 0) * 0.1);
+
   const entry = {
     _user: true,
-    name, mode,
-    area_country: country, area_region: region, area_city: city,
-    difficulty, surface, tags, description: desc,
-    distance_km: parsedMeta.distance_km,
-    elevation_gain: parsedMeta.elevation_gain,
+    name, mode, route_type,
+    area_country: country,
+    area_region: region,
+    area_city: city,
+    difficulty, surface: surface || null, tags,
+    description: desc,
+    distance_km: Math.round(parsedMeta.distance_km * 100) / 100,
+    elevation_gain: Math.round(parsedMeta.elevation_gain || 0),
+    elevation_loss: Math.round(parsedMeta.elevation_loss || 0),
+    max_elevation: parsedMeta.max_elevation != null ? Math.round(parsedMeta.max_elevation) : null,
+    max_grade: parsedMeta.max_grade != null ? Math.round(parsedMeta.max_grade * 10) / 10 : null,
+    estimated_time_min,
     gpx_data: parsedGpxText,
     author, license, video,
+    verified: false,
     added_at: Date.now()
   };
 
@@ -497,6 +551,7 @@ function extractYouTubeId(url) {
 function buildMailtoUrl(e) {
   const diffLabel = { 1:'Facile', 2:'Moderata', 3:'Difficile', 4:'Esperto' };
   const subject = `[Simule] Nuovo percorso: ${e.name}`;
+  const rtLabel = { loop:'Anello', 'out-and-back':'A/R', 'point-to-point':'Punto a punto' };
   const body = [
     `Ciao,`,
     ``,
@@ -504,13 +559,18 @@ function buildMailtoUrl(e) {
     ``,
     `--- DATI PERCORSO ---`,
     `Nome: ${e.name}`,
-    `Area: ${[e.area_city, e.area_region, e.area_country].filter(Boolean).join(', ')}`,
-    `Tipo: ${e.mode}`,
+    `Paese: ${e.area_country}`,
+    e.area_region ? `Regione: ${e.area_region}` : null,
+    e.area_city   ? `Città: ${e.area_city}`     : null,
+    `Tipo: ${e.mode}${e.route_type ? ' · ' + (rtLabel[e.route_type] || e.route_type) : ''}`,
     `Difficoltà: ${diffLabel[e.difficulty] || e.difficulty}`,
-    `Superficie: ${e.surface || '—'}`,
-    `Tag: ${(e.tags || []).join(', ') || '—'}`,
+    e.surface     ? `Superficie: ${e.surface}`  : null,
+    e.tags && e.tags.length ? `Tag: ${e.tags.join(', ')}` : null,
     `Distanza: ${e.distance_km.toFixed(2)} km`,
-    `Dislivello: +${e.elevation_gain}m`,
+    `Dislivello: +${e.elevation_gain}m / -${e.elevation_loss}m`,
+    e.max_elevation != null ? `Quota massima: ${e.max_elevation}m` : null,
+    e.max_grade    != null ? `Pendenza max: ${e.max_grade}%`       : null,
+    `Tempo stimato: ${e.estimated_time_min} min`,
     `Descrizione: ${e.description}`,
     e.video ? `Video YouTube: https://youtube.com/watch?v=${e.video.id} (${(e.video.avgSpeedMs * 3.6).toFixed(1)} km/h)` : null,
     `Autore: ${e.author || 'anonimo'}`,
