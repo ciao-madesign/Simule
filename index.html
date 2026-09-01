@@ -18,7 +18,7 @@
       --border:  rgba(255,255,255,0.07);
       --fg:      #f0f2f5;
       --muted:   #6b7280;
-      --accent:  #00e5a0;
+      --accent:  #4fd1c5;
       --accent2: #00b8ff;
       --danger:  #ff4444;
       --radius:  12px;
@@ -100,7 +100,7 @@
     }
     .hero::before {
       width: 600px; height: 600px;
-      background: radial-gradient(circle, rgba(0,229,160,0.18) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(79,209,197,0.18) 0%, transparent 70%);
       top: -100px; left: -100px;
       animation: orb1 12s ease-in-out infinite;
     }
@@ -159,8 +159,8 @@
       align-items: center;
       gap: 7px;
       padding: 5px 14px;
-      background: rgba(0,229,160,0.08);
-      border: 1px solid rgba(0,229,160,0.25);
+      background: rgba(79,209,197,0.08);
+      border: 1px solid rgba(79,209,197,0.25);
       border-radius: 100px;
       font-size: 12px;
       font-weight: 600;
@@ -230,11 +230,11 @@
       text-decoration: none;
       border-radius: var(--radius);
       transition: transform .15s, box-shadow .15s, background .15s;
-      box-shadow: 0 0 40px rgba(0,229,160,0.3);
+      box-shadow: 0 0 40px rgba(79,209,197,0.3);
     }
     .btn-hero:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 60px rgba(0,229,160,0.45);
+      box-shadow: 0 0 60px rgba(79,209,197,0.45);
       background: #00ffb0;
     }
     .btn-hero .arrow {
@@ -346,8 +346,8 @@
       align-items: center;
       justify-content: center;
       font-size: 22px;
-      background: rgba(0,229,160,0.08);
-      border: 1px solid rgba(0,229,160,0.15);
+      background: rgba(79,209,197,0.08);
+      border: 1px solid rgba(79,209,197,0.15);
     }
 
     .feature-title {
@@ -437,7 +437,7 @@
       gap: 10px;
       transition: border-color .2s;
     }
-    .sensor-card:hover { border-color: rgba(0,229,160,0.3); }
+    .sensor-card:hover { border-color: rgba(79,209,197,0.3); }
 
     .sensor-icon { font-size: 28px; }
 
@@ -466,7 +466,7 @@
       content: '';
       position: absolute;
       width: 800px; height: 400px;
-      background: radial-gradient(ellipse, rgba(0,229,160,0.12) 0%, transparent 70%);
+      background: radial-gradient(ellipse, rgba(79,209,197,0.12) 0%, transparent 70%);
       top: -100px; left: 50%;
       transform: translateX(-50%);
       pointer-events: none;
@@ -537,10 +537,13 @@
 
 <!-- NAV -->
 <nav>
-  <div class="nav-logo">SI<span>MULE</span></div>
+  <a href="https://wiz-trail.vercel.app" class="nav-logo" style="text-decoration:none">
+    <svg style="width:20px;height:15px;margin-right:8px;flex-shrink:0" viewBox="0 0 933 676" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M208.768 321.919L330.269 538.919L463.768 274.419L586.269 538.919L878.269 31.4187" stroke="currentColor" stroke-width="126"/><line x1="36.3834" y1="340.21" x2="329.383" y2="170.21" stroke="currentColor" stroke-width="145"/></svg>
+    <span style="color:var(--fg)">WizTrail</span><span style="color:var(--muted);margin:0 5px;opacity:.5">/</span><span style="color:var(--accent)">Simule</span>
+  </a>
   <div style="display:flex;gap:12px;align-items:center">
     <a href="contribute.html" class="nav-cta" style="display:none" id="nav-contribute">Contribuisci</a>
-    <a href="app.html" class="nav-cta">Accedi →</a>
+    <a href="app.html" class="nav-cta">Apri Simule →</a>
   </div>
 </nav>
 
@@ -552,14 +555,14 @@
     <path d="M0 180 L0 140 Q80 140 120 100 Q160 60 220 80 Q280 100 340 60 Q400 20 440 40 Q480 60 520 30 Q560 0 600 20 Q640 40 680 10 Q720 -20 760 30 Q800 80 840 50 Q880 20 920 60 Q960 100 1000 80 Q1040 60 1080 90 Q1120 120 1160 80 Q1200 40 1280 70 Q1360 100 1440 60 L1440 180 Z" fill="url(#elev-grad)"/>
     <defs>
       <linearGradient id="elev-grad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stop-color="#00e5a0"/>
+        <stop offset="0%" stop-color="#4fd1c5"/>
         <stop offset="100%" stop-color="transparent"/>
       </linearGradient>
     </defs>
   </svg>
 
   <div class="hero-content">
-    <div class="hero-badge">Simulatore GPX — gratuito</div>
+    <div class="hero-badge">WizTrail · Simulatore GPX — gratuito</div>
 
     <h1>Run <em>before</em><br>you run.</h1>
 
@@ -713,7 +716,13 @@
 
 <!-- FOOTER -->
 <footer>
-  <div class="footer-logo">SI<span>MULE</span></div>
+  <div class="footer-logo">
+    <a href="https://wiz-trail.vercel.app" style="display:inline-flex;align-items:center;text-decoration:none;color:inherit">
+      <svg style="width:18px;height:13px;margin-right:6px" viewBox="0 0 933 676" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M208.768 321.919L330.269 538.919L463.768 274.419L586.269 538.919L878.269 31.4187" stroke="currentColor" stroke-width="126"/><line x1="36.3834" y1="340.21" x2="329.383" y2="170.21" stroke="currentColor" stroke-width="145"/></svg>
+      WizTrail
+    </a>
+    <span style="color:var(--muted);margin:0 4px;opacity:.4">/</span><span style="color:var(--accent)">Simule</span>
+  </div>
   <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start">
     <div class="footer-note">Run before you run. &nbsp;·&nbsp; Nessun dato raccolto &nbsp;·&nbsp; Tutto nel browser</div>
     <div style="display:flex;gap:16px;font-size:12px">
@@ -724,5 +733,12 @@
   </div>
 </footer>
 
+<script>
+// WizTrail integration: if ?gpx= param is present, forward to app.html
+(function() {
+  const gpx = new URLSearchParams(location.search).get('gpx');
+  if (gpx) window.location.replace('app.html?gpx=' + encodeURIComponent(gpx));
+})();
+</script>
 </body>
 </html>

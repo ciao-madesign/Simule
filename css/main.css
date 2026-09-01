@@ -1,17 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;700;900&family=Barlow:wght@300;400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;700;900&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg: #0a0c0f;
-  --surface: #12161c;
-  --surface2: #1a2028;
-  --border: #1f2830;
-  --accent: #00e5a0;
+  --bg: #0a0f14;
+  --surface: #121a22;
+  --surface2: #192230;
+  --border: #2a394d;
+  --accent: #4fd1c5;
   --accent2: #00b8ff;
   --warn: #ffb020;
   --danger: #ff4444;
   --down: #00b8ff;
-  --text: #e8edf2;
-  --muted: #5a6878;
+  --text: #e8f2ff;
+  --muted: #a8b3c2;
   --radius: 8px;
   --radius-lg: 12px;
 }
@@ -26,9 +26,21 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Barlow', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
+}
+
+/* WizTrail ambient gradient — identical motif, visible under page content */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(800px 400px at 75% -5%, rgba(79,209,197,0.14), transparent 60%),
+    radial-gradient(600px 400px at 5%  90%, rgba(0,184,255,0.09), transparent 60%);
+  pointer-events: none;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -80,29 +92,84 @@ input:focus, select:focus {
   text-transform: uppercase;
 }
 
-.badge-road { background: rgba(0,184,255,0.15); color: var(--accent2); border: 1px solid rgba(0,184,255,0.3); }
-.badge-trail { background: rgba(0,229,160,0.15); color: var(--accent); border: 1px solid rgba(0,229,160,0.3); }
+.badge-road  { background: rgba(0,184,255,0.15); color: var(--accent2); border: 1px solid rgba(0,184,255,0.3); }
+.badge-trail { background: rgba(79,209,197,0.15); color: var(--accent);  border: 1px solid rgba(79,209,197,0.3); }
 
-/* ---- Layout ---- */
-.page-header {
+/* ---- App header (WizTrail sub-product glass nav) ---- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  height: 56px;
+  padding: 0 20px;
+  background: rgba(10,15,20,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
 }
 
-.logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 22px;
-  letter-spacing: 0.08em;
+.app-brand-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
   color: var(--text);
-  text-transform: uppercase;
+}
+.app-brand-link:hover { text-decoration: none; }
+
+.brand-mark {
+  width: 22px;
+  height: 16px;
+  flex-shrink: 0;
+  margin-right: 8px;
+  color: var(--text);
 }
 
-.logo span { color: var(--accent); }
+.brand-name {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.brand-sep {
+  font-weight: 300;
+  color: var(--muted);
+  margin: 0 5px;
+  opacity: 0.5;
+}
+
+.brand-sub {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.app-nav a {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.app-nav a:hover {
+  color: var(--text);
+  background: rgba(255,255,255,0.06);
+  text-decoration: none;
+}
 
 /* ---- Buttons ---- */
 .btn {
@@ -112,11 +179,10 @@ input:focus, select:focus {
   gap: 8px;
   padding: 10px 20px;
   border-radius: var(--radius);
-  font-family: 'Barlow Condensed', sans-serif;
+  font-family: 'Outfit', sans-serif;
   font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.02em;
   transition: opacity 0.15s, transform 0.1s;
   user-select: none;
 }
@@ -239,7 +305,7 @@ input:focus, select:focus {
 .drop-zone:hover,
 .drop-zone.drag-over {
   border-color: var(--accent);
-  background: rgba(0,229,160,0.04);
+  background: rgba(79,209,197,0.04);
 }
 
 .drop-zone-icon {
@@ -312,7 +378,7 @@ input:focus, select:focus {
 }
 
 .route-item-icon.road { background: rgba(0,184,255,0.15); }
-.route-item-icon.trail { background: rgba(0,229,160,0.15); }
+.route-item-icon.trail { background: rgba(79,209,197,0.15); }
 
 .route-item-info { flex: 1; min-width: 0; }
 
@@ -469,7 +535,7 @@ input:focus, select:focus {
   gap: 10px;
 }
 
-.coverage-good { background: rgba(0,229,160,0.1); border: 1px solid rgba(0,229,160,0.2); color: var(--accent); }
+.coverage-good { background: rgba(79,209,197,0.1); border: 1px solid rgba(79,209,197,0.2); color: var(--accent); }
 .coverage-partial { background: rgba(255,176,32,0.1); border: 1px solid rgba(255,176,32,0.2); color: var(--warn); }
 .coverage-low { background: rgba(255,68,68,0.1); border: 1px solid rgba(255,68,68,0.2); color: var(--danger); }
 
@@ -499,7 +565,7 @@ input:focus, select:focus {
 
 .sensor-option.selected {
   border-color: var(--accent);
-  background: rgba(0,229,160,0.06);
+  background: rgba(79,209,197,0.06);
 }
 
 .sensor-option.disabled {
@@ -635,12 +701,39 @@ input:focus, select:focus {
 }
 
 .hud-logo {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 900;
-  font-size: 18px;
-  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+}
+
+.hud-brand-mark {
+  width: 14px;
+  height: 10px;
   color: var(--text);
-  text-transform: uppercase;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.hud-brand-wt {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  letter-spacing: 0.1px;
+}
+
+.hud-brand-sep {
+  font-weight: 300;
+  color: var(--muted);
+  margin: 0 4px;
+  opacity: 0.4;
+  font-size: 12px;
+}
+
+.hud-brand-sim {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--accent);
 }
 
 .hud-route-info {
@@ -956,7 +1049,7 @@ input:focus, select:focus {
 }
 
 .source-auto { background: rgba(0,184,255,0.15); color: var(--accent2); }
-.source-manual-label { background: rgba(0,229,160,0.15); color: var(--accent); }
+.source-manual-label { background: rgba(79,209,197,0.15); color: var(--accent); }
 
 .api-key-row {
   display: flex;
@@ -987,7 +1080,7 @@ input:focus, select:focus {
 
 .radio-option.selected {
   border-color: var(--accent);
-  background: rgba(0,229,160,0.1);
+  background: rgba(79,209,197,0.1);
   color: var(--accent);
 }
 
@@ -1444,7 +1537,7 @@ input:focus, select:focus {
 .filter-chip:hover { border-color: var(--accent2); color: var(--text); }
 
 .filter-chip.active {
-  background: rgba(0,229,160,0.12);
+  background: rgba(79,209,197,0.12);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1465,9 +1558,9 @@ input:focus, select:focus {
 
 .catalog-user-badge {
   flex-shrink: 0;
-  background: rgba(0,229,160,0.15);
+  background: rgba(79,209,197,0.15);
   color: var(--accent);
-  border: 1px solid rgba(0,229,160,0.3);
+  border: 1px solid rgba(79,209,197,0.3);
   border-radius: 100px;
   padding: 3px 10px;
   font-family: 'Barlow Condensed', sans-serif;
@@ -1507,8 +1600,8 @@ input:focus, select:focus {
 }
 
 .contribute-intro {
-  background: rgba(0,229,160,0.06);
-  border: 1px solid rgba(0,229,160,0.2);
+  background: rgba(79,209,197,0.06);
+  border: 1px solid rgba(79,209,197,0.2);
   border-radius: var(--radius-lg);
   padding: 20px 24px;
   margin-bottom: 32px;
@@ -1584,7 +1677,7 @@ input:focus, select:focus {
 .tag-check input[type="checkbox"] { display: none; }
 
 .tag-check.checked {
-  background: rgba(0,229,160,0.12);
+  background: rgba(79,209,197,0.12);
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -1643,8 +1736,8 @@ input:focus, select:focus {
 
 .contribute-success {
   display: none;
-  background: rgba(0,229,160,0.08);
-  border: 1px solid rgba(0,229,160,0.3);
+  background: rgba(79,209,197,0.08);
+  border: 1px solid rgba(79,209,197,0.3);
   border-radius: var(--radius-lg);
   padding: 32px 24px;
   text-align: center;
@@ -1672,8 +1765,8 @@ input:focus, select:focus {
 }
 
 .submit-step-done {
-  background: rgba(0,229,160,0.06);
-  border: 1px solid rgba(0,229,160,0.2);
+  background: rgba(79,209,197,0.06);
+  border: 1px solid rgba(79,209,197,0.2);
 }
 
 .submit-step-pending {

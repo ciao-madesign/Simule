@@ -179,7 +179,10 @@
   <!-- HUD -->
   <div class="hud" id="hud">
     <div class="hud-topbar">
-      <div class="hud-logo"><span style="color:var(--text)">SI</span><span style="color:var(--accent)">MULE</span></div>
+      <div class="hud-logo">
+        <svg class="hud-brand-mark" viewBox="0 0 933 676" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M208.768 321.919L330.269 538.919L463.768 274.419L586.269 538.919L878.269 31.4187" stroke="currentColor" stroke-width="126"/><line x1="36.3834" y1="340.21" x2="329.383" y2="170.21" stroke="currentColor" stroke-width="145"/></svg>
+        <span class="hud-brand-wt">WizTrail</span><span class="hud-brand-sep">/</span><span class="hud-brand-sim">Simule</span>
+      </div>
       <div class="hud-route-info">
         <div class="hud-route-name" id="hud-route-name">—</div>
         <div class="hud-route-mode" id="hud-route-mode">—</div>
@@ -392,7 +395,7 @@ function setVideoLayout(mode) {
 }
 
 function initLeafletBg() {
-  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const color = isRoadMode ? '#00b8ff' : '#4fd1c5';
   const latlngs = route.map(p => [p.lat, p.lon]);
   lfMap = L.map('maplibre-container', { zoomControl: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -411,7 +414,7 @@ function initLeafletBg() {
 
 // ---- PiP mini-map ----
 function initPipMap() {
-  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const color = isRoadMode ? '#00b8ff' : '#4fd1c5';
   const latlngs = route.map(p => [p.lat, p.lon]);
   pipMap = L.map('pip-map', { zoomControl: false, attributionControl: false });
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -722,7 +725,7 @@ function renderElevationStrip(fromDist) {
   const pts = profile.map((p, i) => `${toX(i).toFixed(1)},${toY(p.ele).toFixed(1)}`);
   const pathD = `M${pts.join('L')}`;
   const fillD = `${pathD}L${(W - PX).toFixed(1)},${H}L${PX},${H}Z`;
-  const color = isRoadMode ? '#00b8ff' : '#00e5a0';
+  const color = isRoadMode ? '#00b8ff' : '#4fd1c5';
 
   // Picchi
   const peaks = findElevationPeaks(eles, 0.2);
